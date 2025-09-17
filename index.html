@@ -192,7 +192,7 @@
 
         // IMPORTANT: قم بلصق رمز تهيئة مشروع Firebase الخاص بك هنا.
         // يجب أن يكون الكود الذي نسخته من إعدادات مشروعك في Firebase.
-        const firebaseConfig = {
+       const firebaseConfig = {
   apiKey: "AIzaSyDNztzQF29nvHbys9yRPv5bICPGVbg32n8",
   authDomain: "exco-60e92.firebaseapp.com",
   projectId: "exco-60e92",
@@ -266,9 +266,10 @@
                     if (userDocSnap.exists()) {
                         userRole = userDocSnap.data().role;
                     } else {
-                        // Create the user document in the new public collection
-                        await setDoc(userDocRef, { role: 'user', email: user.email, created: new Date() });
-                        userRole = 'user';
+                        // NEW LOGIC: Check if this is the admin's email and set the role accordingly
+                        const initialRole = (user.email && user.email.toLowerCase() === adminEmail.toLowerCase()) ? 'admin' : 'user';
+                        await setDoc(userDocRef, { role: initialRole, email: user.email, created: new Date() });
+                        userRole = initialRole;
                     }
                 } catch (error) {
                     console.error("Error fetching user role:", error);
@@ -316,6 +317,8 @@
                 console.error("Authentication Error:", error);
                 if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                     showMessageBox('فشل تسجيل الدخول: البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+                } else if (error.code === 'auth/api-key-not-valid') {
+                     showMessageBox('فشل المصادقة: مفتاح API غير صالح. يرجى التحقق من إعدادات مشروعك.');
                 } else {
                     showMessageBox(`فشل تسجيل الدخول: ${error.message}`);
                 }
@@ -338,8 +341,10 @@
                 }, 1500);
             } catch (error) {
                 console.error("Authentication Error:", error);
-                if (error.code === 'auth/email-already-in-use') {
+                 if (error.code === 'auth/email-already-in-use') {
                     showMessageBox('فشل إنشاء الحساب: هذا البريد الإلكتروني مستخدم بالفعل. استخدم بريداً آخر أو قم بتسجيل الدخول.');
+                } else if (error.code === 'auth/api-key-not-valid') {
+                     showMessageBox('فشل المصادقة: مفتاح API غير صالح. يرجى التحقق من إعدادات مشروعك.');
                 } else {
                     showMessageBox(`فشل إنشاء الحساب: ${error.message}`);
                 }
@@ -466,7 +471,7 @@
 
             try {
                 // IMPORTANT: Replace the following URL with the actual Webhook URL from Make.com
-                const webhookUrl = "https://hook.eu2.make.com/o7qcq7ab2muh8if6uyq58ljxehp3jjzj"; 
+                const webhookUrl = "YOUR_MAKE_COM_WEBHOOK_URL_HERE"; 
 
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
@@ -547,4 +552,3 @@
     </script>
 </body>
 </html>
-
