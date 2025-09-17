@@ -182,7 +182,8 @@
   messagingSenderId: "875802729058",
   appId: "1:875802729058:web:8f1f18f775032f0f270f3b",
   measurementId: "G-3W0477KK1X"
-}; 
+};
+        
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -232,13 +233,19 @@
             if (user) {
                 const userId = user.uid;
                 const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/${userId}`);
-                const userDocSnap = await getDoc(userDocRef);
+                try {
+                    const userDocSnap = await getDoc(userDocRef);
 
-                if (userDocSnap.exists()) {
-                    userRole = userDocSnap.data().role;
-                } else {
-                    // This case is for initial sign-in from a new email/password user
-                    await setDoc(userDocRef, { role: 'user', created: new Date() });
+                    if (userDocSnap.exists()) {
+                        userRole = userDocSnap.data().role;
+                    } else {
+                        // This case is for initial sign-in from a new email/password user
+                        await setDoc(userDocRef, { role: 'user', created: new Date() });
+                        userRole = 'user';
+                    }
+                } catch (error) {
+                    console.error("Error fetching user role:", error);
+                    // In case of error, assume default role
                     userRole = 'user';
                 }
 
