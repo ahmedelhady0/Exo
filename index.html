@@ -174,7 +174,16 @@
 
         // IMPORTANT: قم بلصق رمز تهيئة مشروع Firebase الخاص بك هنا.
         // يجب أن يكون الكود الذي نسخته من إعدادات مشروعك في Firebase.
-        const firebaseConfig = JSON.parse(__firebase_config);
+        // يجب أن يبدأ بـ 'const firebaseConfig = {'
+        const firebaseConfig = {
+  apiKey: "AIzaSyDNztzQF29nvHbys9yRPv5bICPGVbg32n8",
+  authDomain: "exco-60e92.firebaseapp.com",
+  projectId: "exco-60e92",
+  storageBucket: "exco-60e92.firebasestorage.app",
+  messagingSenderId: "875802729058",
+  appId: "1:875802729058:web:8f1f18f775032f0f270f3b",
+  measurementId: "G-3W0477KK1X"
+};
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
