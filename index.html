@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل اليوميات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            direction: rtl;
+        }
+        @media print {
+            body > *:not(#printSection) {
+                display: none !important;
+            }
+            body > #printSection {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .print-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            .print-table th, .print-table td {
+                border: 1px solid #ddd;
+                padding: 12px;
+                text-align: right;
+            }
+            .print-table th {
+                background-color: #f2f2f2;
+                font-weight: bold;
+            }
+            .print-header {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg border border-gray-200">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">تسجيل يوميات العمال والمواد مشاريع شركة اكسو</h1>
+        
+        <div id="authStatus" class="mb-4 text-center text-sm text-gray-600">
+            جاري التحقق من الصلاحيات...
+        </div>
+
+        <!-- Login and Register Form -->
+        <form id="authForm" class="space-y-4">
+            <h2 class="text-xl font-semibold text-gray-800 text-center">تسجيل الدخول / إنشاء حساب</h2>
+            <div>
+                <label for="authEmail" class="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني</label>
+                <input type="email" id="authEmail" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="أدخل بريدك الإلكتروني">
+            </div>
+            <div>
+                <label for="authPassword" class="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
+                <input type="password" id="authPassword" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="أدخل كلمة المرور">
+            </div>
+            <div class="flex space-x-2 space-x-reverse">
+                <button type="button" id="signInBtn" class="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                    تسجيل الدخول
+                </button>
+                <button type="button" id="signUpBtn" class="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
+                    إنشاء حساب
+                </button>
+            </div>
+        </form>
+
+        <!-- Main Report Form -->
+        <form id="reportForm" class="space-y-4 hidden">
+            <div>
+                <button type="button" id="signOutBtn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150 ease-in-out mb-4">
+                    تسجيل الخروج
+                </button>
+            </div>
+            <div>
+                <label for="employeeName" class="block text-sm font-medium text-gray-700 mb-1">اسم الموظف</label>
+                <input type="text" id="employeeName" name="employeeName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="أدخل اسمك">
+            </div>
+
+            <div>
+                <label for="reportDate" class="block text-sm font-medium text-gray-700 mb-1">التاريخ</label>
+                <input type="date" id="reportDate" name="reportDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
+            </div>
+
+            <div>
+                <label for="projectName" class="block text-sm font-medium text-gray-700 mb-1">اسم المشروع</label>
+                <div class="flex items-center space-x-2">
+                    <select id="projectName" name="projectName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
+                        <option value="" disabled selected>اختر مشروعًا أو أضف جديدًا</option>
+                    </select>
+                    <button type="button" id="addProjectBtn" class="flex-shrink-0 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out hidden">
+                        +
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label for="projectPhase" class="block text-sm font-medium text-gray-700 mb-1">مرحلة المشروع</label>
+                <select id="projectPhase" name="projectPhase" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
+                    <option value="" disabled selected>اختر المرحلة</option>
+                    <option value="الأسطح">الأسطح</option>
+                    <option value="الخزانات">الخزانات</option>
+                    <option value="الحمامات">الحمامات</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="itemType" class="block text-sm font-medium text-gray-700 mb-1">نوع البند</label>
+                <select id="itemType" name="itemType" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
+                    <option value="" disabled selected>اختر النوع</option>
+                    <option value="عمالة">عمالة</option>
+                    <option value="مواد">مواد</option>
+                     <option value="مقاول">مقاول</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="itemDescription" class="block text-sm font-medium text-gray-700 mb-1">وصف البند</label>
+                <textarea id="itemDescription" name="itemDescription" rows="4" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="مثال: يومية 5 عمال، أو: 10 أكياس أسمنت"></textarea>
+            </div>
+            
+            <div>
+                <label for="costPerUnit" class="block text-sm font-medium text-gray-700 mb-1">التكلفة الفردية</label>
+                <input type="number" id="costPerUnit" name="costPerUnit" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="مثال: 250">
+            </div>
+            
+            <div>
+                <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">الكمية</label>
+                <input type="number" id="quantity" name="quantity" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="مثال: 5">
+            </div>
+            
+            <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                إرسال التقرير
+            </button>
+        </form>
+
+        <div id="statusMessage" class="mt-4 text-center text-sm font-medium"></div>
+
+        <!-- Section to display report for printing -->
+        <div id="printSection" class="mt-8 hidden">
+            <h2 class="print-header text-xl font-bold text-gray-800 mb-4 text-center">التقرير المُرسل</h2>
+            <div id="reportContent" class="bg-gray-100 rounded-lg p-4 mb-4"></div>
+            <button onclick="saveAsPdf()" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
+                حفظ التقرير بصيغة PDF
+            </button>
+        </div>
+    </div>
+    
+    <div id="messageBox" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-lg p-6 shadow-xl w-full max-w-sm text-center">
+            <p id="messageText" class="text-gray-800 font-medium mb-4"></p>
+            <button id="closeMessageBtn" class="w-full py-2 px-4 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">إغلاق</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, query, orderBy, doc, getDoc, setDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        setLogLevel('debug');
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        const authStatusEl = document.getElementById('authStatus');
+        const reportForm = document.getElementById('reportForm');
+        const authForm = document.getElementById('authForm');
+        const projectSelect = document.getElementById('projectName');
+        const addProjectBtn = document.getElementById('addProjectBtn');
+        const signInBtn = document.getElementById('signInBtn');
+        const signUpBtn = document.getElementById('signUpBtn');
+        const signOutBtn = document.getElementById('signOutBtn');
+        const authEmailInput = document.getElementById('authEmail');
+        const authPasswordInput = document.getElementById('authPassword');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const closeMessageBtn = document.getElementById('closeMessageBtn');
+
+        let userRole = 'user'; // Default role is user
+        
+        // Use the initial auth token to sign in automatically
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        if (initialAuthToken) {
+            signInWithCustomToken(auth, initialAuthToken).catch(error => {
+                console.error("Custom token sign-in failed:", error);
+                signInAnonymously(auth); // Fallback to anonymous sign-in
+            });
+        } else {
+            signInAnonymously(auth); // Fallback to anonymous sign-in
+        }
+
+        function showMessageBox(message) {
+            messageText.textContent = message;
+            messageBox.classList.remove('hidden');
+            messageBox.classList.add('flex');
+        }
+
+        closeMessageBtn.addEventListener('click', () => {
+            messageBox.classList.add('hidden');
+            messageBox.classList.remove('flex');
+        });
+
+        // Listen for authentication state changes
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userId = user.uid;
+                const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/profile/${userId}`);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    userRole = userDocSnap.data().role;
+                } else {
+                    // This case is for initial sign-in from a new email/password user
+                    await setDoc(userDocRef, { role: 'user', created: new Date() });
+                    userRole = 'user';
+                }
+
+                authStatusEl.textContent = `مرحبًا! دورك: ${userRole}.`;
+                authForm.classList.add('hidden');
+                reportForm.classList.remove('hidden');
+
+                if (userRole === 'admin') {
+                    addProjectBtn.classList.remove('hidden');
+                } else {
+                    addProjectBtn.classList.add('hidden');
+                }
+                
+                fetchProjects();
+            } else {
+                authStatusEl.textContent = 'من فضلك قم بتسجيل الدخول أو إنشاء حساب.';
+                authForm.classList.remove('hidden');
+                reportForm.classList.add('hidden');
+            }
+        });
+
+        signInBtn.addEventListener('click', async () => {
+            const email = authEmailInput.value;
+            const password = authPasswordInput.value;
+            showMessageBox('جاري تسجيل الدخول...');
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showMessageBox('تم تسجيل الدخول بنجاح!');
+            } catch (error) {
+                console.error("Authentication Error:", error);
+                showMessageBox(`فشل تسجيل الدخول: ${error.message}`);
+            }
+        });
+
+        signUpBtn.addEventListener('click', async () => {
+            const email = authEmailInput.value;
+            const password = authPasswordInput.value;
+            showMessageBox('جاري إنشاء الحساب...');
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                showMessageBox('تم إنشاء الحساب بنجاح. يمكنك الآن تسجيل الدخول.');
+            } catch (error) {
+                console.error("Authentication Error:", error);
+                showMessageBox(`فشل إنشاء الحساب: ${error.message}`);
+            }
+        });
+
+        signOutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+            showMessageBox('تم تسجيل الخروج بنجاح.');
+        });
+
+        const projectsCollectionRef = collection(db, `artifacts/${appId}/public/data/projects`);
+        
+        function fetchProjects() {
+            const q = query(projectsCollectionRef, orderBy('name'));
+            onSnapshot(q, (snapshot) => {
+                projectSelect.innerHTML = '<option value="" disabled selected>اختر مشروعًا أو أضف جديدًا</option>';
+                snapshot.forEach(doc => {
+                    const project = doc.data();
+                    const option = document.createElement('option');
+                    option.value = project.name;
+                    option.textContent = project.name;
+                    projectSelect.appendChild(option);
+                });
+            });
+        }
+
+        addProjectBtn.addEventListener('click', async () => {
+            const newProjectName = prompt("أدخل اسم المشروع الجديد:");
+            if (newProjectName && newProjectName.trim() !== "") {
+                try {
+                    await addDoc(projectsCollectionRef, {
+                        name: newProjectName
+                    });
+                } catch (error) {
+                    console.error("Error adding project: ", error);
+                }
+            }
+        });
+
+        const form = document.getElementById('reportForm');
+        const statusMessage = document.getElementById('statusMessage');
+        const printSection = document.getElementById('printSection');
+        const reportContent = document.getElementById('reportContent');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            statusMessage.textContent = 'جاري الإرسال...';
+            statusMessage.className = 'mt-4 text-center text-sm font-medium text-blue-500';
+
+            const formData = new FormData(form);
+            const data = {
+                employeeName: formData.get('employeeName'),
+                reportDate: formData.get('reportDate'),
+                projectName: formData.get('projectName'),
+                projectPhase: formData.get('projectPhase'),
+                itemType: formData.get('itemType'),
+                itemDescription: formData.get('itemDescription'),
+                costPerUnit: parseFloat(formData.get('costPerUnit')),
+                quantity: parseInt(formData.get('quantity')),
+                totalCost: parseFloat(formData.get('costPerUnit')) * parseInt(formData.get('quantity'))
+            };
+
+            const webhookUrl = 'https://hook.eu2.make.com/o7qcq7ab2muh8if6uyq58ljxehp3jjzj'; // استبدل هذا الرابط برابط الـWebhook الخاص بك
+
+            try {
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                if (response.ok) {
+                    statusMessage.textContent = 'تم إرسال التقرير بنجاح!';
+                    statusMessage.className = 'mt-4 text-center text-sm font-medium text-green-600';
+                    form.reset(); // Clear the form
+                    displayReport(data); // Display the report for saving as PDF
+                } else {
+                    const errorText = await response.text();
+                    statusMessage.textContent = `فشل الإرسال: ${errorText}`;
+                    statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
+                }
+            } catch (error) {
+                statusMessage.textContent = `حدث خطأ: ${error.message}`;
+                statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
+            }
+        });
+
+        function displayReport(data) {
+            reportContent.innerHTML = `
+                <table class="w-full text-sm rounded-lg overflow-hidden border border-gray-300">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="p-3 font-semibold text-right">البند</th>
+                            <th class="p-3 font-semibold text-right">التفاصيل</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        <tr><td class="p-3 font-medium">اسم الموظف:</td><td class="p-3">${data.employeeName}</td></tr>
+                        <tr><td class="p-3 font-medium">التاريخ:</td><td class="p-3">${data.reportDate}</td></tr>
+                        <tr><td class="p-3 font-medium">اسم المشروع:</td><td class="p-3">${data.projectName}</td></tr>
+                        <tr><td class="p-3 font-medium">مرحلة المشروع:</td><td class="p-3">${data.projectPhase}</td></tr>
+                        <tr><td class="p-3 font-medium">نوع البند:</td><td class="p-3">${data.itemType}</td></tr>
+                        <tr><td class="p-3 font-medium">وصف البند:</td><td class="p-3">${data.itemDescription}</td></tr>
+                        <tr><td class="p-3 font-medium">التكلفة الفردية:</td><td class="p-3">${data.costPerUnit}</td></tr>
+                        <tr><td class="p-3 font-medium">الكمية:</td><td class="p-3">${data.quantity}</td></tr>
+                        <tr class="bg-gray-100"><td class="p-3 font-semibold">الإجمالي:</td><td class="p-3 font-semibold">${data.totalCost}</td></tr>
+                    </tbody>
+                </table>
+                <div class="mt-8 pt-8 border-t border-gray-300">
+                    <p class="text-sm text-gray-600">التوقيع:</p>
+                    <div class="w-full h-16 border-b border-gray-400 mt-2"></div>
+                </div>
+            `;
+            printSection.classList.remove('hidden');
+        }
+
+        function saveAsPdf() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            const content = document.getElementById('reportContent');
+
+            html2canvas(content, {
+                scale: 2, // for better quality
+                allowTaint: true,
+                useCORS: true
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps= doc.getImageProperties(imgData);
+                const pdfWidth = doc.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                doc.save('daily_report.pdf');
+            });
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</body>
+</html>
