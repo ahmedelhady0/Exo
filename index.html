@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل اليوميات</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         body {
@@ -166,11 +168,14 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, query, orderBy, doc, getDoc, setDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, getDoc, setDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         setLogLevel('debug');
 
+        // IMPORTANT: قم بلصق رمز تهيئة مشروع Firebase الخاص بك هنا.
+        // يجب أن يكون الكود الذي نسخته من إعدادات مشروعك في Firebase.
         const firebaseConfig = JSON.parse(__firebase_config);
+        
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -282,11 +287,18 @@
         const projectsCollectionRef = collection(db, `artifacts/${appId}/public/data/projects`);
         
         function fetchProjects() {
-            const q = query(projectsCollectionRef, orderBy('name'));
-            onSnapshot(q, (snapshot) => {
-                projectSelect.innerHTML = '<option value="" disabled selected>اختر مشروعًا أو أضف جديدًا</option>';
+            // Note: Removed orderBy to avoid the need for a composite index. Data will be sorted in memory.
+            onSnapshot(projectsCollectionRef, (snapshot) => {
+                const projects = [];
                 snapshot.forEach(doc => {
-                    const project = doc.data();
+                    projects.push(doc.data());
+                });
+
+                // Sort projects by name in memory
+                projects.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+
+                projectSelect.innerHTML = '<option value="" disabled selected>اختر مشروعًا أو أضف جديدًا</option>';
+                projects.forEach(project => {
                     const option = document.createElement('option');
                     option.value = project.name;
                     option.textContent = project.name;
@@ -328,15 +340,16 @@
                 itemDescription: formData.get('itemDescription'),
                 costPerUnit: parseFloat(formData.get('costPerUnit')),
                 quantity: parseInt(formData.get('quantity')),
-                totalCost: parseFloat(formData.get('costPerUnit')) * parseInt(formData.get('quantity'))
+                total: parseFloat(formData.get('costPerUnit')) * parseInt(formData.get('quantity'))
             };
 
-            const webhookUrl = 'https://hook.eu2.make.com/o7qcq7ab2muh8if6uyq58ljxehp3jjzj'; // استبدل هذا الرابط برابط الـWebhook الخاص بك
-
             try {
+                // IMPORTANT: Replace the following URL with the actual Webhook URL from Make.com
+                const webhookUrl = "YOUR_MAKE_COM_WEBHOOK_URL_HERE"; 
+
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(data),
@@ -345,71 +358,69 @@
                 if (response.ok) {
                     statusMessage.textContent = 'تم إرسال التقرير بنجاح!';
                     statusMessage.className = 'mt-4 text-center text-sm font-medium text-green-600';
-                    form.reset(); // Clear the form
-                    displayReport(data); // Display the report for saving as PDF
+                    displayReportForPrinting(data);
                 } else {
-                    const errorText = await response.text();
-                    statusMessage.textContent = `فشل الإرسال: ${errorText}`;
-                    statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
+                    throw new Error(`Failed to send data. Status: ${response.status}`);
                 }
             } catch (error) {
-                statusMessage.textContent = `حدث خطأ: ${error.message}`;
+                console.error("Error:", error);
+                statusMessage.textContent = `فشل الإرسال: ${error.message}`;
                 statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-600';
             }
         });
 
-        function displayReport(data) {
+        function displayReportForPrinting(data) {
             reportContent.innerHTML = `
-                <table class="w-full text-sm rounded-lg overflow-hidden border border-gray-300">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="p-3 font-semibold text-right">البند</th>
-                            <th class="p-3 font-semibold text-right">التفاصيل</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white">
-                        <tr><td class="p-3 font-medium">اسم الموظف:</td><td class="p-3">${data.employeeName}</td></tr>
-                        <tr><td class="p-3 font-medium">التاريخ:</td><td class="p-3">${data.reportDate}</td></tr>
-                        <tr><td class="p-3 font-medium">اسم المشروع:</td><td class="p-3">${data.projectName}</td></tr>
-                        <tr><td class="p-3 font-medium">مرحلة المشروع:</td><td class="p-3">${data.projectPhase}</td></tr>
-                        <tr><td class="p-3 font-medium">نوع البند:</td><td class="p-3">${data.itemType}</td></tr>
-                        <tr><td class="p-3 font-medium">وصف البند:</td><td class="p-3">${data.itemDescription}</td></tr>
-                        <tr><td class="p-3 font-medium">التكلفة الفردية:</td><td class="p-3">${data.costPerUnit}</td></tr>
-                        <tr><td class="p-3 font-medium">الكمية:</td><td class="p-3">${data.quantity}</td></tr>
-                        <tr class="bg-gray-100"><td class="p-3 font-semibold">الإجمالي:</td><td class="p-3 font-semibold">${data.totalCost}</td></tr>
-                    </tbody>
+                <table class="print-table">
+                    <tr><th>البند</th><th>التفاصيل</th></tr>
+                    <tr><td>اسم الموظف:</td><td>${data.employeeName}</td></tr>
+                    <tr><td>التاريخ:</td><td>${data.reportDate}</td></tr>
+                    <tr><td>اسم المشروع:</td><td>${data.projectName}</td></tr>
+                    <tr><td>مرحلة المشروع:</td><td>${data.projectPhase}</td></tr>
+                    <tr><td>نوع البند:</td><td>${data.itemType}</td></tr>
+                    <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
+                    <tr><td>التكلفة الفردية:</td><td>${data.costPerUnit}</td></tr>
+                    <tr><td>الكمية:</td><td>${data.quantity}</td></tr>
+                    <tr><td>الإجمالي:</td><td>${data.total}</td></tr>
                 </table>
-                <div class="mt-8 pt-8 border-t border-gray-300">
-                    <p class="text-sm text-gray-600">التوقيع:</p>
-                    <div class="w-full h-16 border-b border-gray-400 mt-2"></div>
-                </div>
             `;
             printSection.classList.remove('hidden');
         }
 
-        function saveAsPdf() {
+        async function saveAsPdf() {
+            const reportElement = document.getElementById('reportContent');
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
-            
-            const content = document.getElementById('reportContent');
+            const margin = 10;
+            const contentWidth = 190;
+            const contentHeight = 277;
 
-            html2canvas(content, {
-                scale: 2, // for better quality
-                allowTaint: true,
-                useCORS: true
-            }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const imgProps= doc.getImageProperties(imgData);
-                const pdfWidth = doc.internal.pageSize.getWidth();
-                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            // Add Arabic font for PDF
+            const font = await fetch('https://cdn.jsdelivr.net/npm/almarai-font/dist/Almarai-Regular.ttf');
+            const fontData = await font.arrayBuffer();
+            doc.addFileToVFS('Almarai-Regular.ttf', btoa(String.fromCharCode(...new Uint8Array(fontData))));
+            doc.addFont('Almarai-Regular.ttf', 'Almarai', 'normal');
+            doc.setFont('Almarai');
 
-                doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                doc.save('daily_report.pdf');
+            // Header
+            doc.setFontSize(16);
+            doc.text("تقرير يومي", doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+            const htmlContent = reportElement.innerHTML;
+            doc.html(htmlContent, {
+                callback: function (doc) {
+                    doc.save('daily-report.pdf');
+                },
+                x: margin,
+                y: 30,
+                width: contentWidth,
+                windowWidth: reportElement.scrollWidth,
+                html2canvas: {
+                    scale: 0.8
+                }
             });
         }
+        window.saveAsPdf = saveAsPdf;
     </script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body>
 </html>
