@@ -6,7 +6,7 @@
     <title>تسجيل اليوميات</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/js/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         body {
@@ -192,7 +192,7 @@
 
         // IMPORTANT: قم بلصق رمز تهيئة مشروع Firebase الخاص بك هنا.
         // يجب أن يكون الكود الذي نسخته من إعدادات مشروعك في Firebase.
-       const firebaseConfig = {
+        const firebaseConfig = {
   apiKey: "AIzaSyDNztzQF29nvHbys9yRPv5bICPGVbg32n8",
   authDomain: "exco-60e92.firebaseapp.com",
   projectId: "exco-60e92",
@@ -316,8 +316,6 @@
                 console.error("Authentication Error:", error);
                 if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                     showMessageBox('فشل تسجيل الدخول: البريد الإلكتروني أو كلمة المرور غير صحيحة.');
-                } else if (error.code === 'auth/api-key-not-valid') {
-                     showMessageBox('فشل المصادقة: مفتاح API غير صالح. يرجى التحقق من إعدادات مشروعك.');
                 } else {
                     showMessageBox(`فشل تسجيل الدخول: ${error.message}`);
                 }
@@ -340,10 +338,8 @@
                 }, 1500);
             } catch (error) {
                 console.error("Authentication Error:", error);
-                 if (error.code === 'auth/email-already-in-use') {
+                if (error.code === 'auth/email-already-in-use') {
                     showMessageBox('فشل إنشاء الحساب: هذا البريد الإلكتروني مستخدم بالفعل. استخدم بريداً آخر أو قم بتسجيل الدخول.');
-                } else if (error.code === 'auth/api-key-not-valid') {
-                     showMessageBox('فشل المصادقة: مفتاح API غير صالح. يرجى التحقق من إعدادات مشروعك.');
                 } else {
                     showMessageBox(`فشل إنشاء الحساب: ${error.message}`);
                 }
@@ -533,7 +529,7 @@
             doc.setFontSize(16);
             doc.text("تقرير يومي", doc.internal.pageSize.width / 2, 20, { align: 'center' });
 
-            cبonst htmlContent = reportElement.innerHTML;
+            const htmlContent = reportElement.innerHTML;
             doc.html(htmlContent, {
                 callback: function (doc) {
                     doc.save('daily-report.pdf');
@@ -551,4 +547,3 @@
     </script>
 </body>
 </html>
-
