@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل اليوميات</title>
+    <title>تسجيل يوميات</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -50,7 +50,7 @@
 </head>
 <body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
     <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg border border-gray-200">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">تسجيل يوميات العمال والمواد مشاريع شركة اكسو</h1>
+        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">تسجيل يوميات العمال والمواد لمشاريع شركة اكسو</h1>
         
         <div id="authStatus" class="mb-4 text-center text-sm text-gray-600">
             جاري التحقق من الصلاحيات...
@@ -132,7 +132,21 @@
                          <option value="مقاول">مقاول</option>
                     </select>
                 </div>
-                
+
+                <!-- NEW: Materials section, initially hidden -->
+                <div id="materialsSection" class="space-y-4 hidden">
+                    <div>
+                        <label for="materialName" class="block text-sm font-medium text-gray-700 mb-1">اسم المادة</label>
+                        <select id="materialName" name="materialName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
+                            <option value="" disabled selected>اختر المادة</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="materialUnit" class="block text-sm font-medium text-gray-700 mb-1">وحدة المادة</label>
+                        <input type="text" id="materialUnit" name="materialUnit" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 p-2 border text-gray-500" placeholder="الوحدة تظهر هنا تلقائياً">
+                    </div>
+                </div>
+
                 <div>
                     <label for="itemDescription" class="block text-sm font-medium text-gray-700 mb-1">وصف البند</label>
                     <textarea id="itemDescription" name="itemDescription" rows="4" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="مثال: يومية 5 عمال، أو: 10 أكياس أسمنت"></textarea>
@@ -165,11 +179,27 @@
             <!-- Admin Panel -->
             <div id="adminPanel" class="hidden">
                 <h2 class="text-xl font-semibold text-gray-800 text-center mb-4">لوحة تحكم المدير</h2>
-                <div class="bg-gray-100 p-4 rounded-md">
-                    <h3 class="font-bold mb-2">قائمة المستخدمين</h3>
-                    <ul id="usersList" class="space-y-2 text-sm">
-                        <!-- User list will be populated here -->
-                    </ul>
+                <div class="space-y-4">
+                    <!-- User Management Section -->
+                    <div class="bg-gray-100 p-4 rounded-md">
+                        <h3 class="font-bold mb-2">قائمة المستخدمين</h3>
+                        <ul id="usersList" class="space-y-2 text-sm">
+                            <!-- User list will be populated here -->
+                        </ul>
+                    </div>
+
+                    <!-- NEW: Materials Management Section -->
+                    <div class="bg-gray-100 p-4 rounded-md">
+                        <h3 class="font-bold mb-2 flex items-center justify-between">
+                            <span>إدارة قائمة المواد</span>
+                            <button id="addMaterialBtn" class="py-1 px-3 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
+                                إضافة مادة جديدة
+                            </button>
+                        </h3>
+                        <ul id="materialsList" class="space-y-2 text-sm mt-2">
+                            <!-- Materials list will be populated here -->
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -186,13 +216,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, getDoc, setDoc, setLogLevel, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, getDoc, setDoc, setLogLevel, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         setLogLevel('debug');
 
-        // IMPORTANT: قم بلصق رمز تهيئة مشروع Firebase الخاص بك هنا.
-        // يجب أن يكون الكود الذي نسخته من إعدادات مشروعك في Firebase.
-       const firebaseConfig = {
+        const firebaseConfig = {
   apiKey: "AIzaSyDNztzQF29nvHbys9yRPv5bICPGVbg32n8",
   authDomain: "exco-60e92.firebaseapp.com",
   projectId: "exco-60e92",
@@ -201,15 +229,13 @@
   appId: "1:875802729058:web:8f1f18f775032f0f270f3b",
   measurementId: "G-3W0477KK1X"
 };
-        
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
         
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // Set your admin email here. This user will have admin privileges automatically.
-        const adminEmail = "ahmed@gmail.com"; // <--- CHANGE THIS TO YOUR EMAIL
+        const adminEmail = "ahmed@gmail.com";
 
         const authStatusEl = document.getElementById('authStatus');
         const reportForm = document.getElementById('reportForm');
@@ -229,18 +255,24 @@
         const messageText = document.getElementById('messageText');
         const closeMessageBtn = document.getElementById('closeMessageBtn');
 
-        let userRole = 'user'; // Default role is user
+        const itemTypeSelect = document.getElementById('itemType');
+        const materialsSection = document.getElementById('materialsSection');
+        const materialNameSelect = document.getElementById('materialName');
+        const materialUnitInput = document.getElementById('materialUnit');
+        const addMaterialBtn = document.getElementById('addMaterialBtn');
+        const materialsList = document.getElementById('materialsList');
+
+        let userRole = 'user';
         let userId = null;
 
-        // Use the initial auth token to sign in automatically
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         if (initialAuthToken) {
             signInWithCustomToken(auth, initialAuthToken).catch(error => {
                 console.error("Custom token sign-in failed:", error);
-                signInAnonymously(auth); // Fallback to anonymous sign-in
+                signInAnonymously(auth);
             });
         } else {
-            signInAnonymously(auth); // Fallback to anonymous sign-in
+            signInAnonymously(auth);
         }
 
         function showMessageBox(message) {
@@ -254,27 +286,22 @@
             messageBox.classList.remove('flex');
         });
 
-        // Listen for authentication state changes
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 userId = user.uid;
                 
-                // Get the user's document from the new public location
                 const userDocRef = doc(db, `artifacts/${appId}/public/data/users`, userId);
                 try {
                     const userDocSnap = await getDoc(userDocRef);
                     if (userDocSnap.exists()) {
                         userRole = userDocSnap.data().role;
                     } else {
-                        // NEW LOGIC: Check if this is the admin's email and set the role accordingly
                         const initialRole = (user.email && user.email.toLowerCase() === adminEmail.toLowerCase()) ? 'admin' : 'user';
                         await setDoc(userDocRef, { role: initialRole, email: user.email, created: new Date() });
                         userRole = initialRole;
                     }
                 } catch (error) {
                     console.error("Error fetching user role:", error);
-                    // This is the important part for your case:
-                    // If fetching the doc fails (e.g., due to no database or rules), we check for the admin email.
                     if (user.email && user.email.toLowerCase() === adminEmail.toLowerCase()) {
                         userRole = 'admin';
                     }
@@ -284,7 +311,7 @@
                 authForm.classList.add('hidden');
                 mainAppDiv.classList.remove('hidden');
                 reportForm.classList.remove('hidden');
-                adminPanelDiv.classList.add('hidden'); // Hide admin panel by default
+                adminPanelDiv.classList.add('hidden');
 
                 if (userRole === 'admin') {
                     addProjectBtn.classList.remove('hidden');
@@ -295,6 +322,7 @@
                 }
                 
                 fetchProjects();
+                fetchMaterials();
             } else {
                 authStatusEl.textContent = 'من فضلك قم بتسجيل الدخول أو إنشاء حساب.';
                 authForm.classList.remove('hidden');
@@ -361,6 +389,7 @@
                 reportForm.classList.add('hidden');
                 adminPanelDiv.classList.remove('hidden');
                 fetchUsers();
+                fetchMaterials(); // Reload materials list
             } else {
                 reportForm.classList.remove('hidden');
                 adminPanelDiv.classList.add('hidden');
@@ -372,7 +401,7 @@
             const usersCollectionRef = collection(db, `artifacts/${appId}/public/data/users`);
             try {
                 const querySnapshot = await getDocs(usersCollectionRef);
-                usersList.innerHTML = ''; // Clear loading message
+                usersList.innerHTML = '';
                 querySnapshot.forEach(userDoc => {
                     const data = userDoc.data();
                     const userItem = document.createElement('li');
@@ -381,7 +410,6 @@
                     const userInfo = document.createElement('span');
                     userInfo.className = 'text-gray-800';
                     
-                    // Check if the user has an email and display it
                     const emailDisplay = data.email ? data.email : `User ID: ${userDoc.id}`;
                     userInfo.textContent = `المستخدم: ${emailDisplay} | الدور: ${data.role}`;
 
@@ -398,7 +426,7 @@
                             const newRole = data.role === 'admin' ? 'user' : 'admin';
                             await setDoc(userDoc.ref, { role: newRole }, { merge: true });
                             showMessageBox(`تم تحديث دور المستخدم إلى: ${newRole}`);
-                            fetchUsers(); // Refresh the list
+                            fetchUsers();
                         });
                     }
                     
@@ -446,8 +474,90 @@
             }
         });
 
+        // NEW: Materials functionality
+        const materialsCollectionRef = collection(db, `artifacts/${appId}/public/data/materials`);
+
+        function fetchMaterials() {
+            onSnapshot(materialsCollectionRef, (snapshot) => {
+                const materials = [];
+                materialNameSelect.innerHTML = '<option value="" disabled selected>اختر المادة</option>';
+                materialsList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    materials.push({ id: doc.id, ...data });
+
+                    // Populate the dropdown for the user
+                    const option = document.createElement('option');
+                    option.value = data.name;
+                    option.textContent = `${data.name} (${data.unit})`;
+                    materialNameSelect.appendChild(option);
+
+                    // Populate the admin list
+                    const materialItem = document.createElement('li');
+                    materialItem.className = 'flex items-center justify-between p-2 rounded-md bg-white border border-gray-200';
+                    materialItem.innerHTML = `
+                        <span>${data.name} (${data.unit})</span>
+                        <button class="delete-material-btn text-red-500 hover:text-red-700 font-bold px-2" data-id="${doc.id}">
+                            &times;
+                        </button>
+                    `;
+                    materialsList.appendChild(materialItem);
+                });
+
+                // Attach event listeners for delete buttons
+                document.querySelectorAll('.delete-material-btn').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const materialId = e.target.dataset.id;
+                        try {
+                            await deleteDoc(doc(db, `artifacts/${appId}/public/data/materials`, materialId));
+                            showMessageBox('تم حذف المادة بنجاح!');
+                        } catch (error) {
+                            console.error("Error deleting material:", error);
+                            showMessageBox('فشل في حذف المادة.');
+                        }
+                    });
+                });
+            });
+        }
+
+        // Show/hide materials dropdown based on item type
+        itemTypeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'مواد') {
+                materialsSection.classList.remove('hidden');
+            } else {
+                materialsSection.classList.add('hidden');
+            }
+        });
+
+        // Update material unit when a material is selected
+        materialNameSelect.addEventListener('change', (e) => {
+            const selectedMaterial = materials.find(m => m.name === e.target.value);
+            if (selectedMaterial) {
+                materialUnitInput.value = selectedMaterial.unit;
+            } else {
+                materialUnitInput.value = '';
+            }
+        });
+        
+        addMaterialBtn.addEventListener('click', async () => {
+            const materialName = prompt("أدخل اسم المادة الجديدة (مثال: أسمنت):");
+            if (!materialName || materialName.trim() === "") return;
+            const materialUnit = prompt("أدخل وحدة قياس المادة (مثال: كيس):");
+            if (!materialUnit || materialUnit.trim() === "") return;
+
+            try {
+                await addDoc(materialsCollectionRef, {
+                    name: materialName.trim(),
+                    unit: materialUnit.trim()
+                });
+                showMessageBox('تم إضافة المادة بنجاح!');
+            } catch (error) {
+                console.error("Error adding material: ", error);
+                showMessageBox('فشل في إضافة المادة.');
+            }
+        });
+
         const form = document.getElementById('reportForm');
-        const statusMessage = document.getElementById('statusMessage');
         const printSection = document.getElementById('printSection');
         const reportContent = document.getElementById('reportContent');
 
@@ -468,6 +578,14 @@
                 total: parseFloat(formData.get('costPerUnit')) * parseInt(formData.get('quantity')),
                 timestamp: new Date()
             };
+            
+            // If the item type is "مواد", add the material name and unit to the report
+            if (data.itemType === 'مواد') {
+                data.materialName = formData.get('materialName');
+                data.materialUnit = formData.get('materialUnit');
+                // Use a more detailed description for materials
+                data.itemDescription = `${data.quantity} ${data.materialUnit} ${data.materialName}`;
+            }
 
             try {
                 // IMPORTANT: Replace the following URL with the actual Webhook URL from Make.com
@@ -482,7 +600,6 @@
                 });
 
                 if (response.ok) {
-                    // Save to Firestore after successful webhook call
                     const reportsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/reports`);
                     await addDoc(reportsCollectionRef, data);
                     
@@ -498,6 +615,17 @@
         });
 
         function displayReportForPrinting(data) {
+            let itemDetails = `
+                <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
+            `;
+            if (data.itemType === 'مواد') {
+                itemDetails = `
+                    <tr><td>اسم المادة:</td><td>${data.materialName}</td></tr>
+                    <tr><td>وحدة المادة:</td><td>${data.materialUnit}</td></tr>
+                    <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
+                `;
+            }
+
             reportContent.innerHTML = `
                 <table class="print-table">
                     <tr><th>البند</th><th>التفاصيل</th></tr>
@@ -506,7 +634,7 @@
                     <tr><td>اسم المشروع:</td><td>${data.projectName}</td></tr>
                     <tr><td>مرحلة المشروع:</td><td>${data.projectPhase}</td></tr>
                     <tr><td>نوع البند:</td><td>${data.itemType}</td></tr>
-                    <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
+                    ${itemDetails}
                     <tr><td>التكلفة الفردية:</td><td>${data.costPerUnit}</td></tr>
                     <tr><td>الكمية:</td><td>${data.quantity}</td></tr>
                     <tr><td>الإجمالي:</td><td>${data.total}</td></tr>
@@ -523,14 +651,12 @@
             const contentWidth = 190;
             const contentHeight = 277;
 
-            // Add Arabic font for PDF
             const font = await fetch('https://cdn.jsdelivr.net/npm/almarai-font/dist/Almarai-Regular.ttf');
             const fontData = await font.arrayBuffer();
             doc.addFileToVFS('Almarai-Regular.ttf', btoa(String.fromCharCode(...new Uint8Array(fontData))));
             doc.addFont('Almarai-Regular.ttf', 'Almarai', 'normal');
             doc.setFont('Almarai');
 
-            // Header
             doc.setFontSize(16);
             doc.text("تقرير يومي", doc.internal.pageSize.width / 2, 20, { align: 'center' });
 
