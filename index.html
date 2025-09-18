@@ -529,29 +529,58 @@
             } catch (error) {
                 console.error("Error fetching users:", error);
                 usersList.innerHTML = '<li class="text-center text-red-500">فشل في تحميل قائمة المستخدمين.</li>';
-            }
-        }
-        // دالة لإنشاء رقم تسلسلي فريد
-        function generateSerialNumber() {
-            const now = new Date();
-            const year = now.getFullYear().toString();
-            const month = (now.getMonth() + 1).toString().padStart(2, '0');
-            const day = now.getDate().toString().padStart(2, '0');
-            const random = Math.floor(1000 + Math.random() * 9000).toString();
-            return `R-${year}${month}${day}-${random}`;
-        }
+       // دالة لإنشاء رقم تسلسلي فريد
+function generateSerialNumber() {
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const random = Math.floor(1000 + Math.random() * 9000).toString();
+    return `R-${year}${month}${day}-${random}`;
+}
 
-        // دالة لتحديث الرقم التسلسلي في الواجهة
-        function updateSerialNumber() {
-            const serialNumberDisplay = document.getElementById('serial-number-display');
-            if (serialNumberDisplay) {
-                serialNumberDisplay.textContent = generateSerialNumber();
-            }
-        }
+// دالة لتحديث الرقم التسلسلي في الواجهة
+function updateSerialNumber() {
+    const serialNumberDisplay = document.getElementById('serial-number-display');
+    if (serialNumberDisplay) {
+        serialNumberDisplay.textContent = generateSerialNumber();
+    }
+}
 
-        // تحديث الرقم التسلسلي عند تحميل الصفحة لأول مرة
-        updateSerialNumber()
+// في البداية، الرقم التسلسلي فارغ (حتى أول إرسال)
+updateSerialNumber();
 
+// عند إرسال التقرير
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showMessageBox('جاري الإرسال...');
+    // هنا الرقم التسلسلي الجديد لكل تقرير
+    const serialNumber = generateSerialNumber();
+    document.getElementById('serial-number-display').textContent = serialNumber;
+
+    const formData = new FormData(form);
+    const data = {
+        serialNumber: serialNumber, // أضف الرقم التسلسلي لبيانات التقرير
+        employeeName: formData.get('employeeName'),
+        reportDate: formData.get('reportDate'),
+        projectName: formData.get('projectName'),
+        projectPhase: formData.get('projectPhase'),
+        itemType: formData.get('itemType'),
+        itemDescription: formData.get('itemDescription'),
+        costPerUnit: parseFloat(formData.get('costPerUnit')),
+        quantity: parseInt(formData.get('quantity')),
+        total: parseFloat(formData.get('costPerUnit')) * parseInt(formData.get('quantity')),
+        timestamp: new Date()
+    };
+    // باقي الكود كما هو...
+
+    // بعد نجاح الإرسال، رقم تسلسلي جديد
+    if (response.ok) {
+        // ... حفظ التقرير
+        updateSerialNumber(); // جاهز للتقرير التالي
+        displayReportForPrinting(data); // ستحتاج تعديل هذه الدالة لتعرض الرقم التسلسلي أيضاً!
+    }
+});
         // Projects
         const projectsCollectionRef = collection(db, `artifacts/${appId}/public/data/projects`);
         function fetchProjects() {
@@ -929,6 +958,7 @@
     </script>
 </body>
 </html>
+
 
 
 
