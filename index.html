@@ -539,46 +539,58 @@ function generateSerialNumber() {
     return `R-${year}${month}${day}-${random}`;
 }
 
-// دالة لتحديث الرقم التسلسلي في الواجهة
-function updateSerialNumber() {
-    const serialNumberDisplay = document.getElementById('serial-number-display');
-    if (serialNumberDisplay) {
-        serialNumberDisplay.textContent = generateSerialNumber();
+
+
+// احذف أي استدعاء لـ updateSerialNumber() أو توليد الرقم عند تحميل الصفحة
+
+let pendingSerialNumber = null; // رقم تسلسلي يتم توليده فقط عند أول فتح للنموذج
+
+function generateSerialNumber() {
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const random = Math.floor(1000 + Math.random() * 9000).toString();
+    return `R-${year}${month}${day}-${random}`;
+}
+
+// توليد الرقم التسلسلي مرة واحدة فقط عند أول فتح للنموذج
+function prepareSerialNumber() {
+    if (!pendingSerialNumber) {
+        pendingSerialNumber = generateSerialNumber();
+        const serialNumberDisplay = document.getElementById('serial-number-display');
+        if (serialNumberDisplay) {
+            serialNumberDisplay.textContent = pendingSerialNumber;
+        }
     }
 }
 
-// في البداية، الرقم التسلسلي فارغ (حتى أول إرسال)
-updateSerialNumber();
+// استدعِ هذه الدالة فقط عند فتح النموذج (مثلاً بعد تسجيل الدخول وعرض النموذج)
+onAuthStateChanged(auth, async (user) => {
+    // ... باقي الكود
+    if (user) {
+        // ... باقي الكود
+        prepareSerialNumber();
+    }
+    // ... باقي الكود
+});
 
-// عند إرسال التقرير
+// عند إرسال التقرير: استخدم الرقم المخزن في pendingSerialNumber وأعد توليده بعد الإرسال
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
     showMessageBox('جاري الإرسال...');
-    // هنا الرقم التسلسلي الجديد لكل تقرير
-    const serialNumber = generateSerialNumber();
-    document.getElementById('serial-number-display').textContent = serialNumber;
-
-    const formData = new FormData(form);
+    const serialNumber = pendingSerialNumber; // الرقم الحالي
+    // باقي بيانات التقرير...
     const data = {
-        serialNumber: serialNumber, // أضف الرقم التسلسلي لبيانات التقرير
-        employeeName: formData.get('employeeName'),
-        reportDate: formData.get('reportDate'),
-        projectName: formData.get('projectName'),
-        projectPhase: formData.get('projectPhase'),
-        itemType: formData.get('itemType'),
-        itemDescription: formData.get('itemDescription'),
-        costPerUnit: parseFloat(formData.get('costPerUnit')),
-        quantity: parseInt(formData.get('quantity')),
-        total: parseFloat(formData.get('costPerUnit')) * parseInt(formData.get('quantity')),
-        timestamp: new Date()
+        serialNumber: serialNumber,
+        // باقي الخصائص
     };
-    // باقي الكود كما هو...
-
-    // بعد نجاح الإرسال، رقم تسلسلي جديد
+    // ... إرسال التقرير
     if (response.ok) {
-        // ... حفظ التقرير
-        updateSerialNumber(); // جاهز للتقرير التالي
-        displayReportForPrinting(data); // ستحتاج تعديل هذه الدالة لتعرض الرقم التسلسلي أيضاً!
+        // ... حفظ التقرير وعرضه
+        pendingSerialNumber = null; // تصفير الرقم ليتم توليد رقم جديد لاحقاً
+        prepareSerialNumber(); // توليد رقم لتقرير جديد
+        displayReportForPrinting(data);
     }
 });
         // Projects
@@ -958,6 +970,7 @@ form.addEventListener('submit', async (e) => {
     </script>
 </body>
 </html>
+
 
 
 
