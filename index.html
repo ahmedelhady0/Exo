@@ -105,15 +105,58 @@
             const day = now.getDate().toString().padStart(2, '0');
             const random = Math.floor(1000 + Math.random() * 9000).toString();
             return `R-${year}${month}${day}-${random}`;
-        }
+        // دالة لإنشاء رقم تسلسلي فريد
+function generateSerialNumber() {
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const random = Math.floor(1000 + Math.random() * 9000).toString();
+    return `R-${year}${month}${day}-${random}`;
+}
 
-        // تعيين الرقم التسلسلي عند تحميل الصفحة
-        window.onload = function() {
-            const serialNumberDisplay = document.getElementById('serial-number-display');
-            if (serialNumberDisplay) {
-                serialNumberDisplay.textContent = generateSerialNumber();
-            }
-        }
+// دالة لتحديث الرقم التسلسلي في الواجهة
+function updateSerialNumber() {
+    const serialNumberDisplay = document.getElementById('serial-number-display');
+    if (serialNumberDisplay) {
+        serialNumberDisplay.textContent = generateSerialNumber();
+    }
+}
+
+// في البداية، الرقم التسلسلي فارغ (حتى أول إرسال)
+updateSerialNumber();
+
+// عند إرسال التقرير
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showMessageBox('جاري الإرسال...');
+    // هنا الرقم التسلسلي الجديد لكل تقرير
+    const serialNumber = generateSerialNumber();
+    document.getElementById('serial-number-display').textContent = serialNumber;
+
+    const formData = new FormData(form);
+    const data = {
+        serialNumber: serialNumber, // أضف الرقم التسلسلي لبيانات التقرير
+        employeeName: formData.get('employeeName'),
+        reportDate: formData.get('reportDate'),
+        projectName: formData.get('projectName'),
+        projectPhase: formData.get('projectPhase'),
+        itemType: formData.get('itemType'),
+        itemDescription: formData.get('itemDescription'),
+        costPerUnit: parseFloat(formData.get('costPerUnit')),
+        quantity: parseInt(formData.get('quantity')),
+        total: parseFloat(formData.get('costPerUnit')) * parseInt(formData.get('quantity')),
+        timestamp: new Date()
+    };
+    // باقي الكود كما هو...
+
+    // بعد نجاح الإرسال، رقم تسلسلي جديد
+    if (response.ok) {
+        // ... حفظ التقرير
+        updateSerialNumber(); // جاهز للتقرير التالي
+        displayReportForPrinting(data); // ستحتاج تعديل هذه الدالة لتعرض الرقم التسلسلي أيضاً!
+    }
+});
     </script>
 
 
@@ -899,21 +942,22 @@
                 `;
             }
             reportContent.innerHTML = `
-                <table class="print-table">
-                    <tr><th>البند</th><th>التفاصيل</th></tr>
-                    <tr><td>اسم الموظف:</td><td>${data.employeeName}</td></tr>
-                    <tr><td>التاريخ:</td><td>${data.reportDate}</td></tr>
-                    <tr><td>اسم المشروع:</td><td>${data.projectName}</td></tr>
-                    <tr><td>مرحلة المشروع:</td><td>${data.projectPhase}</td></tr>
-                    <tr><td>نوع البند:</td><td>${data.itemType}</td></tr>
-                    ${itemDetails}
-                    <tr><td>التكلفة الفردية:</td><td>${data.costPerUnit}</td></tr>
-                    <tr><td>الكمية:</td><td>${data.quantity}</td></tr>
-                    <tr><td>الإجمالي:</td><td>${data.total}</td></tr>
-                </table>
-            `;
-            printSection.classList.remove('hidden');
-        }
+        <table class="print-table">
+            <tr><th>البند</th><th>التفاصيل</th></tr>
+            <tr><td>الرقم التسلسلي:</td><td>${data.serialNumber}</td></tr>
+            <tr><td>اسم الموظف:</td><td>${data.employeeName}</td></tr>
+            <tr><td>التاريخ:</td><td>${data.reportDate}</td></tr>
+            <tr><td>اسم المشروع:</td><td>${data.projectName}</td></tr>
+            <tr><td>مرحلة المشروع:</td><td>${data.projectPhase}</td></tr>
+            <tr><td>نوع البند:</td><td>${data.itemType}</td></tr>
+            ${itemDetails}
+            <tr><td>التكلفة الفردية:</td><td>${data.costPerUnit}</td></tr>
+            <tr><td>الكمية:</td><td>${data.quantity}</td></tr>
+            <tr><td>الإجمالي:</td><td>${data.total}</td></tr>
+        </table>
+    `;
+    printSection.classList.remove('hidden');
+}
 
         async function saveAsPdf() {
             const reportElement = document.getElementById('reportContent');
@@ -947,6 +991,7 @@
     </script>
 </body>
 </html>
+
 
 
 
