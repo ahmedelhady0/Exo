@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل يوميات وطلبات</title>
+    <title>تسجيل يوميات</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -49,8 +49,8 @@
     </style>
 </head>
 <body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
-    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl border border-gray-200">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">إدارة المشاريع اليومية</h1>
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg border border-gray-200">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">تسجيل يوميات العمال والمواد لمشاريع شركة اكسو</h1>
         
         <div id="authStatus" class="mb-4 text-center text-sm text-gray-600">
             جاري التحقق من الصلاحيات...
@@ -77,7 +77,7 @@
             </div>
         </form>
 
-        <!-- Main App -->
+        <!-- Main Report Form -->
         <div id="mainApp" class="hidden">
             <div class="flex justify-between items-center mb-4">
                 <button type="button" id="signOutBtn" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150 ease-in-out">
@@ -85,9 +85,6 @@
                 </button>
                 <button type="button" id="adminPanelBtn" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition duration-150 ease-in-out hidden">
                     لوحة تحكم المدير
-                </button>
-                <button type="button" id="approvalsPanelBtn" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out hidden">
-                    طلبات الموافقة
                 </button>
             </div>
             
@@ -98,10 +95,12 @@
                     <label for="employeeName" class="block text-sm font-medium text-gray-700 mb-1">اسم الموظف</label>
                     <input type="text" id="employeeName" name="employeeName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="أدخل اسمك">
                 </div>
+
                 <div>
                     <label for="reportDate" class="block text-sm font-medium text-gray-700 mb-1">التاريخ</label>
                     <input type="date" id="reportDate" name="reportDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
                 </div>
+
                 <div>
                     <label for="projectName" class="block text-sm font-medium text-gray-700 mb-1">اسم المشروع</label>
                     <div class="flex items-center space-x-2 space-x-reverse">
@@ -113,6 +112,7 @@
                         </button>
                     </div>
                 </div>
+
                 <div>
                     <label for="projectPhase" class="block text-sm font-medium text-gray-700 mb-1">مرحلة المشروع</label>
                     <select id="projectPhase" name="projectPhase" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
@@ -122,97 +122,87 @@
                         <option value="الحمامات">الحمامات</option>
                     </select>
                 </div>
-                
+
+                <!-- Materials section -->
+                <div id="materialsSection" class="space-y-4 hidden">
+                    <div>
+                        <label for="materialName" class="block text-sm font-medium text-gray-700 mb-1">اسم المادة</label>
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <select id="materialName" name="materialName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
+                                <option value="" disabled selected>اختر المادة</option>
+                            </select>
+                            <button type="button" id="addMaterialBtn" class="flex-shrink-0 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out hidden">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="materialUnit" class="block text-sm font-medium text-gray-700 mb-1">وحدة المادة</label>
+                        <input type="text" id="materialUnit" name="materialUnit" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 p-2 border text-gray-500" placeholder="الوحدة تظهر هنا تلقائياً">
+                    </div>
+                </div>
+
+                <!-- Workers section -->
+                <div id="workersSection" class="space-y-4 hidden">
+                    <div>
+                        <label for="workerName" class="block text-sm font-medium text-gray-700 mb-1">اسم العامل</label>
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <select id="workerName" name="workerName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
+                                <option value="" disabled selected>اختر العامل</option>
+                            </select>
+                            <button type="button" id="addWorkerBtn" class="flex-shrink-0 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out hidden">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="workerUnit" class="block text-sm font-medium text-gray-700 mb-1">وحدة العامل</label>
+                        <input type="text" id="workerUnit" name="workerUnit" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 p-2 border text-gray-500" placeholder="الوحدة تظهر هنا تلقائياً">
+                    </div>
+                </div>
+
+                <!-- Contractors section -->
+                <div id="contractorsSection" class="space-y-4 hidden">
+                    <div>
+                        <label for="contractorName" class="block text-sm font-medium text-gray-700 mb-1">اسم المقاول</label>
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <select id="contractorName" name="contractorName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
+                                <option value="" disabled selected>اختر المقاول</option>
+                            </select>
+                            <button type="button" id="addContractorBtn" class="flex-shrink-0 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out hidden">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="contractorUnit" class="block text-sm font-medium text-gray-700 mb-1">وحدة المقاول</label>
+                        <input type="text" id="contractorUnit" name="contractorUnit" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 p-2 border text-gray-500" placeholder="الوحدة تظهر هنا تلقائياً">
+                    </div>
+                </div>
+
                 <div>
                     <label for="itemType" class="block text-sm font-medium text-gray-700 mb-1">نوع البند</label>
                     <select id="itemType" name="itemType" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
-                        <!-- Options will be loaded dynamically based on user department -->
+                        <option value="" disabled selected>اختر النوع</option>
+                        <option value="عمالة">عمالة</option>
+                        <option value="مواد">مواد</option>
+                        <option value="مقاول">مقاول</option>
                     </select>
                 </div>
                 
-                <!-- Dynamic Sections -->
-                <div id="dynamicSections">
-                    <!-- Sections will be displayed based on itemType -->
-                    
-                    <!-- Materials Section (for Insulation) -->
-                    <div id="materialsSection" class="space-y-4 hidden">
-                        <div>
-                            <label for="materialName" class="block text-sm font-medium text-gray-700 mb-1">اسم المادة</label>
-                            <div class="flex items-center space-x-2 space-x-reverse">
-                                <select id="materialName" name="materialName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
-                                    <option value="" disabled selected>اختر المادة</option>
-                                </select>
-                                <button type="button" id="addMaterialBtn" class="flex-shrink-0 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out hidden">
-                                    +
-                                </button>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="materialUnit" class="block text-sm font-medium text-gray-700 mb-1">وحدة المادة</label>
-                            <input type="text" id="materialUnit" name="materialUnit" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 p-2 border text-gray-500" placeholder="الوحدة تظهر هنا تلقائياً">
-                        </div>
-                    </div>
-    
-                    <!-- Workers Section (for both departments) -->
-                    <div id="workersSection" class="space-y-4 hidden">
-                        <div>
-                            <label for="workerName" class="block text-sm font-medium text-gray-700 mb-1">اسم العامل</label>
-                            <div class="flex items-center space-x-2 space-x-reverse">
-                                <select id="workerName" name="workerName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
-                                    <option value="" disabled selected>اختر العامل</option>
-                                </select>
-                                <button type="button" id="addWorkerBtn" class="flex-shrink-0 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out hidden">
-                                    +
-                                </button>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="workerUnit" class="block text-sm font-medium text-gray-700 mb-1">وحدة العامل</label>
-                            <input type="text" id="workerUnit" name="workerUnit" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 p-2 border text-gray-500" placeholder="الوحدة تظهر هنا تلقائياً">
-                        </div>
-                    </div>
-    
-                    <!-- Contractors Section (for Contracting) -->
-                    <div id="contractorsSection" class="space-y-4 hidden">
-                        <div>
-                            <label for="contractorName" class="block text-sm font-medium text-gray-700 mb-1">اسم المقاول</label>
-                            <div class="flex items-center space-x-2 space-x-reverse">
-                                <select id="contractorName" name="contractorName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
-                                    <option value="" disabled selected>اختر المقاول</option>
-                                </select>
-                                <button type="button" id="addContractorBtn" class="flex-shrink-0 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out hidden">
-                                    +
-                                </button>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="contractorUnit" class="block text-sm font-medium text-gray-700 mb-1">وحدة المقاول</label>
-                            <input type="text" id="contractorUnit" name="contractorUnit" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 p-2 border text-gray-500" placeholder="الوحدة تظهر هنا تلقائياً">
-                        </div>
-                    </div>
-
-                    <!-- Custody Section (for Contracting) -->
-                    <div id="custodySection" class="space-y-4 hidden">
-                        <div>
-                            <label for="custodyItem" class="block text-sm font-medium text-gray-700 mb-1">وصف العهدة</label>
-                            <textarea id="custodyItem" name="custodyItem" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="مثال: جهاز حفر، سلم كهربائي"></textarea>
-                        </div>
-                    </div>
-                </div>
-
                 <div>
                     <label for="itemDescription" class="block text-sm font-medium text-gray-700 mb-1">وصف البند</label>
                     <textarea id="itemDescription" name="itemDescription" rows="4" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="مثال: يومية 5 عمال، أو: 10 أكياس أسمنت"></textarea>
                 </div>
                 
-                <div id="quantitySection">
-                    <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">الكمية</label>
-                    <input type="number" id="quantity" name="quantity" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="مثال: 5">
-                </div>
-
-                <div id="costSection">
+                <div>
                     <label for="costPerUnit" class="block text-sm font-medium text-gray-700 mb-1">التكلفة الفردية</label>
                     <input type="number" id="costPerUnit" name="costPerUnit" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="مثال: 250">
+                </div>
+                
+                <div>
+                    <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">الكمية</label>
+                    <input type="number" id="quantity" name="quantity" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="مثال: 5">
                 </div>
                 
                 <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
@@ -220,14 +210,15 @@
                 </button>
             </form>
 
-            <!-- Approvals Panel -->
-            <div id="approvalsPanel" class="hidden">
-                <h2 class="text-xl font-semibold text-gray-800 text-center mb-4">طلبات الموافقة</h2>
-                <div id="approvalsList" class="space-y-4">
-                    <!-- Approval requests will be populated here -->
-                </div>
+            <!-- Section to display report for printing -->
+            <div id="printSection" class="mt-8 hidden">
+                <h2 class="print-header text-xl font-bold text-gray-800 mb-4 text-center">التقرير المُرسل</h2>
+                <div id="reportContent" class="bg-gray-100 rounded-lg p-4 mb-4"></div>
+                <button onclick="saveAsPdf()" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
+                    حفظ التقرير بصيغة PDF
+                </button>
             </div>
-
+            
             <!-- Admin Panel -->
             <div id="adminPanel" class="hidden">
                 <h2 class="text-xl font-semibold text-gray-800 text-center mb-4">لوحة تحكم المدير</h2>
@@ -243,22 +234,23 @@
                     <!-- Materials Management Section -->
                     <div class="bg-gray-100 p-4 rounded-md">
                         <h3 class="font-bold mb-2">إدارة قائمة المواد</h3>
-                        <ul id="materialsList" class="space-y-2 text-sm mt-2"></ul>
+                        <ul id="materialsList" class="space-y-2 text-sm mt-2">
+                            <!-- Materials list will be populated here -->
+                        </ul>
                     </div>
                     <!-- Workers Management Section -->
                     <div class="bg-gray-100 p-4 rounded-md">
                         <h3 class="font-bold mb-2">إدارة قائمة العمالة</h3>
-                        <ul id="workersList" class="space-y-2 text-sm mt-2"></ul>
+                        <ul id="workersList" class="space-y-2 text-sm mt-2">
+                            <!-- Workers list will be populated here -->
+                        </ul>
                     </div>
                     <!-- Contractors Management Section -->
                     <div class="bg-gray-100 p-4 rounded-md">
                         <h3 class="font-bold mb-2">إدارة قائمة المقاولين</h3>
-                        <ul id="contractorsList" class="space-y-2 text-sm mt-2"></ul>
-                    </div>
-                    <!-- Custody Items Management Section -->
-                    <div class="bg-gray-100 p-4 rounded-md">
-                        <h3 class="font-bold mb-2">إدارة بنود العهدة</h3>
-                        <ul id="custodyItemsList" class="space-y-2 text-sm mt-2"></ul>
+                        <ul id="contractorsList" class="space-y-2 text-sm mt-2">
+                            <!-- Contractors list will be populated here -->
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -276,31 +268,25 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, getDoc, setDoc, setLogLevel, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, getDoc, setDoc, setLogLevel, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         setLogLevel('debug');
 
         const firebaseConfig = {
-            apiKey: "AIzaSyDNztzQF29nvHbys9yRPv5bICPGVbg32n8",
-            authDomain: "exco-60e92.firebaseapp.com",
-            projectId: "exco-60e92",
-            storageBucket: "exco-60e92.firebasestorage.app",
-            messagingSenderId: "875802729058",
-            appId: "1:875802729058:web:8f1f18f775032f0f270f3b",
-            measurementId: "G-3W0477KK1X"
+          apiKey: "AIzaSyDNztzQF29nvHbys9yRPv5bICPGVbg32n8",
+          authDomain: "exco-60e92.firebaseapp.com",
+          projectId: "exco-60e92",
+          storageBucket: "exco-60e92.firebasestorage.app",
+          messagingSenderId: "875802729058",
+          appId: "1:875802729058:web:8f1f18f775032f0f270f3b",
+          measurementId: "G-3W0477KK1X"
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
         
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const adminEmail = "ahmed@gmail.com";
-        const adminRole = "admin";
-        const contractingSupervisorRole = "contracting-supervisor";
-        const insulationSupervisorRole = "insulation-supervisor";
-        const insulationEngineerRole = "insulation-engineer";
-        const warehouseKeeperRole = "warehouse-keeper";
-        const contractingEngineerRole = "contracting-engineer";
+        const adminEmail = "ahmed@gmail.com"; // ضع ايميل المدير هنا
 
         // Element references
         const authStatusEl = document.getElementById('authStatus');
@@ -308,10 +294,7 @@
         const authForm = document.getElementById('authForm');
         const mainAppDiv = document.getElementById('mainApp');
         const adminPanelBtn = document.getElementById('adminPanelBtn');
-        const approvalsPanelBtn = document.getElementById('approvalsPanelBtn');
         const adminPanelDiv = document.getElementById('adminPanel');
-        const approvalsPanelDiv = document.getElementById('approvalsPanel');
-        const approvalsList = document.getElementById('approvalsList');
         const usersList = document.getElementById('usersList');
         const projectSelect = document.getElementById('projectName');
         const addProjectBtn = document.getElementById('addProjectBtn');
@@ -324,39 +307,32 @@
         const messageText = document.getElementById('messageText');
         const closeMessageBtn = document.getElementById('closeMessageBtn');
 
+        // Materials
         const itemTypeSelect = document.getElementById('itemType');
-        const dynamicSections = document.getElementById('dynamicSections');
         const materialsSection = document.getElementById('materialsSection');
         const materialNameSelect = document.getElementById('materialName');
         const materialUnitInput = document.getElementById('materialUnit');
         const addMaterialBtn = document.getElementById('addMaterialBtn');
         const materialsList = document.getElementById('materialsList');
+        let materials = [];
 
+        // Workers
         const workersSection = document.getElementById('workersSection');
         const workerNameSelect = document.getElementById('workerName');
         const workerUnitInput = document.getElementById('workerUnit');
         const addWorkerBtn = document.getElementById('addWorkerBtn');
         const workersList = document.getElementById('workersList');
+        let workers = [];
 
+        // Contractors
         const contractorsSection = document.getElementById('contractorsSection');
         const contractorNameSelect = document.getElementById('contractorName');
         const contractorUnitInput = document.getElementById('contractorUnit');
         const addContractorBtn = document.getElementById('addContractorBtn');
         const contractorsList = document.getElementById('contractorsList');
-
-        const custodySection = document.getElementById('custodySection');
-        const custodyItemsList = document.getElementById('custodyItemsList');
-        const employeeNameInput = document.getElementById('employeeName');
-        const reportDateInput = document.getElementById('reportDate');
-        const projectPhaseSelect = document.getElementById('projectPhase');
-        const itemDescriptionTextarea = document.getElementById('itemDescription');
-        const quantityInput = document.getElementById('quantity');
-        const costPerUnitInput = document.getElementById('costPerUnit');
-        const quantitySection = document.getElementById('quantitySection');
-        const costSection = document.getElementById('costSection');
+        let contractors = [];
 
         let userRole = 'user';
-        let userDepartment = 'unknown';
         let userId = null;
 
         // Auth logic
@@ -388,186 +364,50 @@
                 try {
                     const userDocSnap = await getDoc(userDocRef);
                     if (userDocSnap.exists()) {
-                        const data = userDocSnap.data();
-                        userRole = data.role;
-                        userDepartment = data.department || 'unknown';
+                        userRole = userDocSnap.data().role;
                     } else {
-                        const initialRole = (user.email && user.email.toLowerCase() === adminEmail.toLowerCase()) ? adminRole : 'user';
-                        await setDoc(userDocRef, { role: initialRole, email: user.email, created: new Date(), department: 'unknown' });
+                        const initialRole = (user.email && user.email.toLowerCase() === adminEmail.toLowerCase()) ? 'admin' : 'user';
+                        await setDoc(userDocRef, { role: initialRole, email: user.email, created: new Date() });
                         userRole = initialRole;
                     }
                 } catch (error) {
                     console.error("Error fetching user role:", error);
-                    userRole = (user.email && user.email.toLowerCase() === adminEmail.toLowerCase()) ? adminRole : 'user';
+                    if (user.email && user.email.toLowerCase() === adminEmail.toLowerCase()) {
+                        userRole = 'admin';
+                    }
                 }
-                
-                authStatusEl.textContent = `مرحبًا بك! دورك: ${userRole}. قسمك: ${userDepartment}.`;
+                authStatusEl.textContent = `مرحبًا! دورك: ${userRole}.`;
                 authForm.classList.add('hidden');
                 mainAppDiv.classList.remove('hidden');
-                
-                renderUI();
+                reportForm.classList.remove('hidden');
+                adminPanelDiv.classList.add('hidden');
+
+                // زر إضافة يظهر للمدير فقط
+                if (userRole === 'admin') {
+                    addProjectBtn.classList.remove('hidden');
+                    addMaterialBtn.classList.remove('hidden');
+                    addWorkerBtn.classList.remove('hidden');
+                    addContractorBtn.classList.remove('hidden');
+                    adminPanelBtn.classList.remove('hidden');
+                } else {
+                    addProjectBtn.classList.add('hidden');
+                    addMaterialBtn.classList.add('hidden');
+                    addWorkerBtn.classList.add('hidden');
+                    addContractorBtn.classList.add('hidden');
+                    adminPanelBtn.classList.add('hidden');
+                }
+
+                fetchProjects();
+                fetchMaterials();
+                fetchWorkers();
+                fetchContractors();
             } else {
                 authStatusEl.textContent = 'من فضلك قم بتسجيل الدخول أو إنشاء حساب.';
                 authForm.classList.remove('hidden');
                 mainAppDiv.classList.add('hidden');
-                reportForm.classList.add('hidden');
-                adminPanelDiv.classList.add('hidden');
-                approvalsPanelDiv.classList.add('hidden');
             }
         });
 
-        function renderUI() {
-            // Hide all sections initially
-            reportForm.classList.add('hidden');
-            adminPanelDiv.classList.add('hidden');
-            approvalsPanelDiv.classList.add('hidden');
-            adminPanelBtn.classList.add('hidden');
-            approvalsPanelBtn.classList.add('hidden');
-            
-            // Show sections based on user role
-            if (userRole === adminRole) {
-                adminPanelBtn.classList.remove('hidden');
-                reportForm.classList.remove('hidden');
-                addProjectBtn.classList.remove('hidden');
-                addMaterialBtn.classList.remove('hidden');
-                addWorkerBtn.classList.remove('hidden');
-                addContractorBtn.classList.remove('hidden');
-            } else if (userRole.includes('supervisor')) {
-                reportForm.classList.remove('hidden');
-                updateReportFormForSupervisor();
-            } else if (userRole.includes('engineer') || userRole === 'warehouse-keeper') {
-                approvalsPanelBtn.classList.remove('hidden');
-                fetchApprovals();
-            } else {
-                reportForm.classList.remove('hidden'); // Default form for basic users if needed
-            }
-
-            fetchProjects();
-            fetchMaterials();
-            fetchWorkers();
-            fetchContractors();
-        }
-
-        function updateReportFormForSupervisor() {
-            // Populate item type based on department
-            itemTypeSelect.innerHTML = '<option value="" disabled selected>اختر النوع</option>';
-            if (userDepartment === 'contracting') {
-                itemTypeSelect.innerHTML += `<option value="عمالة">عمالة</option>`;
-                itemTypeSelect.innerHTML += `<option value="مقاول">مقاول</option>`;
-                itemTypeSelect.innerHTML += `<option value="عهده">عهده</option>`;
-            } else if (userDepartment === 'insulation') {
-                itemTypeSelect.innerHTML += `<option value="عمالة">عمالة</option>`;
-                itemTypeSelect.innerHTML += `<option value="مواد">مواد</option>`;
-            } else {
-                itemTypeSelect.innerHTML += `<option value="عمالة">عمالة</option>`;
-            }
-            
-            // Add event listener for item type change
-            itemTypeSelect.addEventListener('change', (e) => {
-                const itemType = e.target.value;
-                // Hide all dynamic sections
-                materialsSection.classList.add('hidden');
-                workersSection.classList.add('hidden');
-                contractorsSection.classList.add('hidden');
-                custodySection.classList.add('hidden');
-                quantitySection.classList.remove('hidden');
-                costSection.classList.remove('hidden');
-
-                // Show relevant sections
-                if (itemType === 'مواد') {
-                    materialsSection.classList.remove('hidden');
-                } else if (itemType === 'عمالة') {
-                    workersSection.classList.remove('hidden');
-                } else if (itemType === 'مقاول') {
-                    contractorsSection.classList.remove('hidden');
-                } else if (itemType === 'عهده') {
-                    custodySection.classList.remove('hidden');
-                    quantitySection.classList.add('hidden');
-                    costSection.classList.add('hidden');
-                }
-            });
-        }
-        
-        async function fetchApprovals() {
-            approvalsList.innerHTML = '<li class="text-center text-gray-500">جاري تحميل طلبات الموافقة...</li>';
-            
-            let reportsCollectionRef;
-            if (userRole === warehouseKeeperRole) {
-                reportsCollectionRef = collection(db, `artifacts/${appId}/public/data/reports`);
-                onSnapshot(reportsCollectionRef, (snapshot) => {
-                    const pendingRequests = [];
-                    snapshot.forEach(doc => {
-                        const report = doc.data();
-                        if (report.status === 'pending-warehouse-approval') {
-                            pendingRequests.push({ id: doc.id, ...report });
-                        }
-                    });
-                    displayApprovals(pendingRequests);
-                });
-            } else if (userRole.includes('engineer')) {
-                reportsCollectionRef = collection(db, `artifacts/${appId}/public/data/reports`);
-                onSnapshot(reportsCollectionRef, (snapshot) => {
-                    const pendingRequests = [];
-                    snapshot.forEach(doc => {
-                        const report = doc.data();
-                        const requiredApproval = userRole === contractingEngineerRole ? 'pending-contracting-engineer-approval' : 'pending-insulation-engineer-approval';
-                        if (report.status === requiredApproval) {
-                            pendingRequests.push({ id: doc.id, ...report });
-                        }
-                    });
-                    displayApprovals(pendingRequests);
-                });
-            }
-        }
-
-        function displayApprovals(requests) {
-            approvalsList.innerHTML = '';
-            if (requests.length === 0) {
-                approvalsList.innerHTML = '<p class="text-center text-gray-500">لا توجد طلبات موافقة حالياً.</p>';
-            }
-            requests.forEach(req => {
-                const item = document.createElement('div');
-                item.className = 'bg-white p-4 rounded-md shadow border border-gray-200';
-                item.innerHTML = `
-                    <p class="font-bold text-gray-800">نوع الطلب: ${req.itemType}</p>
-                    <p class="text-sm text-gray-600">المشروع: ${req.projectName}</p>
-                    <p class="text-sm text-gray-600">المُرسِل: ${req.employeeName}</p>
-                    <p class="text-sm text-gray-600">الوصف: ${req.itemDescription}</p>
-                    <p class="text-sm text-gray-600">الحالة: ${req.status}</p>
-                    <div class="mt-4 flex space-x-2 space-x-reverse">
-                        <button class="approve-btn py-1 px-3 text-xs rounded-md text-white bg-green-500 hover:bg-green-600 transition duration-150 ease-in-out" data-id="${req.id}">موافقة</button>
-                        <button class="reject-btn py-1 px-3 text-xs rounded-md text-white bg-red-500 hover:bg-red-600 transition duration-150 ease-in-out" data-id="${req.id}">رفض</button>
-                    </div>
-                `;
-                approvalsList.appendChild(item);
-            });
-
-            document.querySelectorAll('.approve-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const docId = e.target.dataset.id;
-                    const newStatus = userRole === warehouseKeeperRole ? 'pending-insulation-engineer-approval' : 'approved';
-                    const reportDocRef = doc(db, `artifacts/${appId}/public/data/reports`, docId);
-                    await updateDoc(reportDocRef, {
-                        status: newStatus,
-                        [`approvals.${userId}`]: { status: 'approved', date: new Date(), by: auth.currentUser.email || 'غير معروف' }
-                    });
-                    showMessageBox('تمت الموافقة على الطلب بنجاح!');
-                });
-            });
-
-            document.querySelectorAll('.reject-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const docId = e.target.dataset.id;
-                    const reportDocRef = doc(db, `artifacts/${appId}/public/data/reports`, docId);
-                    await updateDoc(reportDocRef, {
-                        status: 'rejected',
-                        [`approvals.${userId}`]: { status: 'rejected', date: new Date(), by: auth.currentUser.email || 'غير معروف' }
-                    });
-                    showMessageBox('تم رفض الطلب.');
-                });
-            });
-        }
-        
         signInBtn.addEventListener('click', async () => {
             const email = authEmailInput.value;
             const password = authPasswordInput.value;
@@ -575,9 +415,19 @@
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 showMessageBox('تم تسجيل الدخول بنجاح!');
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                    messageBox.classList.remove('flex');
+                }, 1500);
             } catch (error) {
                 console.error("Authentication Error:", error);
-                showMessageBox(`فشل تسجيل الدخول: ${error.message}`);
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                    showMessageBox('فشل تسجيل الدخول: البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+                } else if (error.code === 'auth/api-key-not-valid') {
+                    showMessageBox('فشل المصادقة: مفتاح API غير صالح. يرجى التحقق من إعدادات مشروعك.');
+                } else {
+                    showMessageBox(`فشل تسجيل الدخول: ${error.message}`);
+                }
             }
         });
 
@@ -589,11 +439,21 @@
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const newUser = userCredential.user;
                 const userDocRef = doc(db, `artifacts/${appId}/public/data/users`, newUser.uid);
-                await setDoc(userDocRef, { role: 'user', department: 'unknown', email: newUser.email, created: new Date() });
+                await setDoc(userDocRef, { role: 'user', email: newUser.email, created: new Date() });
                 showMessageBox('تم إنشاء الحساب بنجاح. يمكنك الآن تسجيل الدخول.');
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                    messageBox.classList.remove('flex');
+                }, 1500);
             } catch (error) {
                 console.error("Authentication Error:", error);
-                showMessageBox(`فشل إنشاء الحساب: ${error.message}`);
+                 if (error.code === 'auth/email-already-in-use') {
+                    showMessageBox('فشل إنشاء الحساب: هذا البريد الإلكتروني مستخدم بالفعل. استخدم بريداً آخر أو قم بتسجيل الدخول.');
+                } else if (error.code === 'auth/api-key-not-valid') {
+                    showMessageBox('فشل المصادقة: مفتاح API غير صالح. يرجى التحقق من إعدادات مشروعك.');
+                } else {
+                    showMessageBox(`فشل إنشاء الحساب: ${error.message}`);
+                }
             }
         });
 
@@ -601,275 +461,343 @@
             await signOut(auth);
             showMessageBox('تم تسجيل الخروج بنجاح.');
         });
-        
+
         adminPanelBtn.addEventListener('click', () => {
             if (adminPanelDiv.classList.contains('hidden')) {
                 reportForm.classList.add('hidden');
-                approvalsPanelDiv.classList.add('hidden');
                 adminPanelDiv.classList.remove('hidden');
-                fetchAdminData();
+                fetchUsers();
+                fetchMaterials();
+                fetchWorkers();
+                fetchContractors();
             } else {
-                renderUI(); // Back to main UI
-            }
-        });
-
-        approvalsPanelBtn.addEventListener('click', () => {
-            if (approvalsPanelDiv.classList.contains('hidden')) {
-                reportForm.classList.add('hidden');
+                reportForm.classList.remove('hidden');
                 adminPanelDiv.classList.add('hidden');
-                approvalsPanelDiv.classList.remove('hidden');
-                fetchApprovals();
-            } else {
-                renderUI(); // Back to main UI
             }
         });
-        
-        async function fetchAdminData() {
-            fetchUsers();
-            fetchMaterials();
-            fetchWorkers();
-            fetchContractors();
-            fetchCustodyItems();
-        }
 
         async function fetchUsers() {
             usersList.innerHTML = '<li class="text-center text-gray-500">جاري تحميل المستخدمين...</li>';
             const usersCollectionRef = collection(db, `artifacts/${appId}/public/data/users`);
-            onSnapshot(usersCollectionRef, (snapshot) => {
+            try {
+                const querySnapshot = await getDocs(usersCollectionRef);
                 usersList.innerHTML = '';
-                snapshot.forEach(userDoc => {
+                querySnapshot.forEach(userDoc => {
                     const data = userDoc.data();
                     const userItem = document.createElement('li');
                     userItem.className = 'flex items-center justify-between p-2 rounded-md bg-white border border-gray-200';
                     const userInfo = document.createElement('span');
                     userInfo.className = 'text-gray-800';
                     const emailDisplay = data.email ? data.email : `User ID: ${userDoc.id}`;
-                    userInfo.textContent = `المستخدم: ${emailDisplay} | الدور: ${data.role} | القسم: ${data.department}`;
-
-                    const actionsDiv = document.createElement('div');
-                    actionsDiv.className = 'flex items-center space-x-2 space-x-reverse';
-
-                    const roleSelect = document.createElement('select');
-                    roleSelect.className = 'py-1 px-2 text-xs rounded-md border border-gray-300';
-                    const roles = [adminRole, 'user', contractingSupervisorRole, insulationSupervisorRole, contractingEngineerRole, insulationEngineerRole, warehouseKeeperRole];
-                    roles.forEach(r => {
-                        const option = document.createElement('option');
-                        option.value = r;
-                        option.textContent = r;
-                        if (data.role === r) option.selected = true;
-                        roleSelect.appendChild(option);
-                    });
-                    roleSelect.addEventListener('change', async (e) => {
-                        await setDoc(userDoc.ref, { role: e.target.value }, { merge: true });
-                        showMessageBox(`تم تحديث دور المستخدم إلى: ${e.target.value}`);
-                    });
-
-                    const departmentSelect = document.createElement('select');
-                    departmentSelect.className = 'py-1 px-2 text-xs rounded-md border border-gray-300';
-                    const departments = ['unknown', 'contracting', 'insulation'];
-                    departments.forEach(d => {
-                        const option = document.createElement('option');
-                        option.value = d;
-                        option.textContent = d;
-                        if (data.department === d) option.selected = true;
-                        departmentSelect.appendChild(option);
-                    });
-                    departmentSelect.addEventListener('change', async (e) => {
-                        await setDoc(userDoc.ref, { department: e.target.value }, { merge: true });
-                        showMessageBox(`تم تحديث قسم المستخدم إلى: ${e.target.value}`);
-                    });
-                    
+                    userInfo.textContent = `المستخدم: ${emailDisplay} | الدور: ${data.role}`;
+                    const roleBtn = document.createElement('button');
+                    roleBtn.className = `py-1 px-3 text-xs font-medium rounded-md transition duration-150 ease-in-out ${data.role === 'admin' ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`;
+                    roleBtn.textContent = data.role === 'admin' ? 'إزالة صلاحية المدير' : 'منح صلاحية المدير';
                     if (userDoc.id === userId) {
-                        roleSelect.disabled = true;
-                        departmentSelect.disabled = true;
+                        roleBtn.disabled = true;
+                        roleBtn.textContent = 'دورك الحالي';
+                        roleBtn.className = 'py-1 px-3 text-xs font-medium rounded-md transition duration-150 ease-in-out bg-gray-400 text-white cursor-not-allowed';
+                    } else {
+                        roleBtn.addEventListener('click', async () => {
+                            const newRole = data.role === 'admin' ? 'user' : 'admin';
+                            await setDoc(userDoc.ref, { role: newRole }, { merge: true });
+                            showMessageBox(`تم تحديث دور المستخدم إلى: ${newRole}`);
+                            fetchUsers();
+                        });
                     }
-                    
-                    actionsDiv.appendChild(roleSelect);
-                    actionsDiv.appendChild(departmentSelect);
-                    
                     userItem.appendChild(userInfo);
-                    userItem.appendChild(actionsDiv);
+                    userItem.appendChild(roleBtn);
                     usersList.appendChild(userItem);
                 });
-            });
-        }
-        
-        function setupManagementSection(listEl, collectionName, singularName, addBtn) {
-            const collectionRef = collection(db, `artifacts/${appId}/public/data/${collectionName}`);
-            onSnapshot(collectionRef, (snapshot) => {
-                listEl.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const item = doc.data();
-                    const li = document.createElement('li');
-                    li.className = 'flex items-center justify-between p-2 rounded-md bg-white border border-gray-200';
-                    li.innerHTML = `
-                        <span>${item.name || item.description} - ${item.unit || ''}</span>
-                        <button class="delete-btn py-1 px-2 text-xs text-white bg-red-500 rounded-md hover:bg-red-600" data-id="${doc.id}">حذف</button>
-                    `;
-                    listEl.appendChild(li);
-                });
-                listEl.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        const docId = e.target.dataset.id;
-                        await deleteDoc(doc(collectionRef, docId));
-                        showMessageBox(`تم حذف ${singularName} بنجاح.`);
-                    });
-                });
-            });
-        
-            if (addBtn) {
-                addBtn.addEventListener('click', async () => {
-                    const itemName = prompt(`أدخل اسم ${singularName} الجديد:`);
-                    if (itemName) {
-                        const itemUnit = prompt(`أدخل وحدة ${itemName}:`);
-                        if (itemUnit) {
-                            await addDoc(collectionRef, { name: itemName, unit: itemUnit });
-                            showMessageBox(`تم إضافة ${itemName} بنجاح.`);
-                        }
-                    }
-                });
+            } catch (error) {
+                console.error("Error fetching users:", error);
+                usersList.innerHTML = '<li class="text-center text-red-500">فشل في تحميل قائمة المستخدمين.</li>';
             }
         }
-        
-        function fetchMaterials() {
-            setupManagementSection(materialsList, 'materials', 'مادة', addMaterialBtn);
-            const materialsCollectionRef = collection(db, `artifacts/${appId}/public/data/materials`);
-            onSnapshot(materialsCollectionRef, (snapshot) => {
-                materialNameSelect.innerHTML = '<option value="" disabled selected>اختر المادة</option>';
-                snapshot.forEach(doc => {
-                    const material = doc.data();
-                    const option = document.createElement('option');
-                    option.value = material.name;
-                    option.textContent = material.name;
-                    option.dataset.unit = material.unit;
-                    materialNameSelect.appendChild(option);
-                });
-            });
-            materialNameSelect.addEventListener('change', (e) => {
-                const selectedOption = e.target.options[e.target.selectedIndex];
-                materialUnitInput.value = selectedOption.dataset.unit;
-            });
-        }
 
-        function fetchWorkers() {
-            setupManagementSection(workersList, 'workers', 'عامل', addWorkerBtn);
-            const workersCollectionRef = collection(db, `artifacts/${appId}/public/data/workers`);
-            onSnapshot(workersCollectionRef, (snapshot) => {
-                workerNameSelect.innerHTML = '<option value="" disabled selected>اختر العامل</option>';
-                snapshot.forEach(doc => {
-                    const worker = doc.data();
-                    const option = document.createElement('option');
-                    option.value = worker.name;
-                    option.textContent = worker.name;
-                    option.dataset.unit = worker.unit;
-                    workerNameSelect.appendChild(option);
-                });
-            });
-            workerNameSelect.addEventListener('change', (e) => {
-                const selectedOption = e.target.options[e.target.selectedIndex];
-                workerUnitInput.value = selectedOption.dataset.unit;
-            });
-        }
-
-        function fetchContractors() {
-            setupManagementSection(contractorsList, 'contractors', 'مقاول', addContractorBtn);
-            const contractorsCollectionRef = collection(db, `artifacts/${appId}/public/data/contractors`);
-            onSnapshot(contractorsCollectionRef, (snapshot) => {
-                contractorNameSelect.innerHTML = '<option value="" disabled selected>اختر المقاول</option>';
-                snapshot.forEach(doc => {
-                    const contractor = doc.data();
-                    const option = document.createElement('option');
-                    option.value = contractor.name;
-                    option.textContent = contractor.name;
-                    option.dataset.unit = contractor.unit;
-                    contractorNameSelect.appendChild(option);
-                });
-            });
-            contractorNameSelect.addEventListener('change', (e) => {
-                const selectedOption = e.target.options[e.target.selectedIndex];
-                contractorUnitInput.value = selectedOption.dataset.unit;
-            });
-        }
-
-        function fetchCustodyItems() {
-             setupManagementSection(custodyItemsList, 'custody', 'عهدة');
-        }
-
+        // Projects
+        const projectsCollectionRef = collection(db, `artifacts/${appId}/public/data/projects`);
         function fetchProjects() {
-            const projectsCollectionRef = collection(db, `artifacts/${appId}/public/data/projects`);
             onSnapshot(projectsCollectionRef, (snapshot) => {
-                projectSelect.innerHTML = '<option value="" disabled selected>اختر مشروعًا أو أضف جديدًا</option>';
+                const projects = [];
                 snapshot.forEach(doc => {
-                    const project = doc.data();
+                    projects.push(doc.data());
+                });
+                projects.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+                projectSelect.innerHTML = '<option value="" disabled selected>اختر مشروعًا أو أضف جديدًا</option>';
+                projects.forEach(project => {
                     const option = document.createElement('option');
                     option.value = project.name;
                     option.textContent = project.name;
                     projectSelect.appendChild(option);
                 });
             });
-            addProjectBtn.addEventListener('click', async () => {
-                const projectName = prompt('أدخل اسم المشروع الجديد:');
-                if (projectName) {
-                    await addDoc(collection(db, `artifacts/${appId}/public/data/projects`), { name: projectName, createdBy: userId });
-                    showMessageBox(`تمت إضافة مشروع "${projectName}" بنجاح.`);
+        }
+        addProjectBtn.addEventListener('click', async () => {
+            const newProjectName = prompt("أدخل اسم المشروع الجديد:");
+            if (newProjectName && newProjectName.trim() !== "") {
+                try {
+                    await addDoc(projectsCollectionRef, {
+                        name: newProjectName
+                    });
+                } catch (error) {
+                    console.error("Error adding project: ", error);
                 }
+            }
+        });
+
+        // Materials functionality
+        const materialsCollectionRef = collection(db, `artifacts/${appId}/public/data/materials`);
+        function fetchMaterials() {
+            onSnapshot(materialsCollectionRef, (snapshot) => {
+                materials = [];
+                materialNameSelect.innerHTML = '<option value="" disabled selected>اختر المادة</option>';
+                materialsList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    materials.push({ id: doc.id, ...data });
+                    const option = document.createElement('option');
+                    option.value = data.name;
+                    option.textContent = `${data.name} (${data.unit})`;
+                    materialNameSelect.appendChild(option);
+                    // Manage in admin panel
+                    const materialItem = document.createElement('li');
+                    materialItem.className = 'flex items-center justify-between p-2 rounded-md bg-white border border-gray-200';
+                    materialItem.innerHTML = `
+                        <span>${data.name} (${data.unit})</span>
+                        <button class="delete-material-btn text-red-500 hover:text-red-700 font-bold px-2" data-id="${doc.id}">
+                            &times;
+                        </button>
+                    `;
+                    materialsList.appendChild(materialItem);
+                });
+                document.querySelectorAll('.delete-material-btn').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const materialId = e.target.dataset.id;
+                        try {
+                            await deleteDoc(doc(db, `artifacts/${appId}/public/data/materials`, materialId));
+                            showMessageBox('تم حذف المادة بنجاح!');
+                        } catch (error) {
+                            console.error("Error deleting material:", error);
+                            showMessageBox('فشل في حذف المادة.');
+                        }
+                    });
+                });
             });
         }
-        
-        reportForm.addEventListener('submit', async (e) => {
+        addMaterialBtn.addEventListener('click', async () => {
+            const materialName = prompt("أدخل اسم المادة الجديدة (مثال: أسمنت):");
+            if (!materialName || materialName.trim() === "") return;
+            const materialUnit = prompt("أدخل وحدة قياس المادة (مثال: كيس):");
+            if (!materialUnit || materialUnit.trim() === "") return;
+            try {
+                await addDoc(materialsCollectionRef, {
+                    name: materialName.trim(),
+                    unit: materialUnit.trim()
+                });
+                showMessageBox('تم إضافة المادة بنجاح!');
+            } catch (error) {
+                console.error("Error adding material: ", error);
+                showMessageBox('فشل في إضافة المادة.');
+            }
+        });
+
+        // Workers functionality
+        const workersCollectionRef = collection(db, `artifacts/${appId}/public/data/workers`);
+        function fetchWorkers() {
+            onSnapshot(workersCollectionRef, (snapshot) => {
+                workers = [];
+                workerNameSelect.innerHTML = '<option value="" disabled selected>اختر العامل</option>';
+                workersList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    workers.push({ id: doc.id, ...data });
+                    const option = document.createElement('option');
+                    option.value = data.name;
+                    option.textContent = `${data.name} (${data.unit})`;
+                    workerNameSelect.appendChild(option);
+                    // Manage in admin panel
+                    const workerItem = document.createElement('li');
+                    workerItem.className = 'flex items-center justify-between p-2 rounded-md bg-white border border-gray-200';
+                    workerItem.innerHTML = `
+                        <span>${data.name} (${data.unit})</span>
+                        <button class="delete-worker-btn text-red-500 hover:text-red-700 font-bold px-2" data-id="${doc.id}">
+                            &times;
+                        </button>
+                    `;
+                    workersList.appendChild(workerItem);
+                });
+                document.querySelectorAll('.delete-worker-btn').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const workerId = e.target.dataset.id;
+                        try {
+                            await deleteDoc(doc(db, `artifacts/${appId}/public/data/workers`, workerId));
+                            showMessageBox('تم حذف العامل بنجاح!');
+                        } catch (error) {
+                            console.error("Error deleting worker:", error);
+                            showMessageBox('فشل في حذف العامل.');
+                        }
+                    });
+                });
+            });
+        }
+        addWorkerBtn.addEventListener('click', async () => {
+            const workerName = prompt("أدخل اسم العامل الجديد:");
+            if (!workerName || workerName.trim() === "") return;
+            const workerUnit = prompt("أدخل وحدة العامل (مثال: يوم):");
+            if (!workerUnit || workerUnit.trim() === "") return;
+            try {
+                await addDoc(workersCollectionRef, {
+                    name: workerName.trim(),
+                    unit: workerUnit.trim()
+                });
+                showMessageBox('تم إضافة العامل بنجاح!');
+            } catch (error) {
+                console.error("Error adding worker: ", error);
+                showMessageBox('فشل في إضافة العامل.');
+            }
+        });
+
+        // Contractors functionality
+        const contractorsCollectionRef = collection(db, `artifacts/${appId}/public/data/contractors`);
+        function fetchContractors() {
+            onSnapshot(contractorsCollectionRef, (snapshot) => {
+                contractors = [];
+                contractorNameSelect.innerHTML = '<option value="" disabled selected>اختر المقاول</option>';
+                contractorsList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    contractors.push({ id: doc.id, ...data });
+                    const option = document.createElement('option');
+                    option.value = data.name;
+                    option.textContent = `${data.name} (${data.unit})`;
+                    contractorNameSelect.appendChild(option);
+                    // Manage in admin panel
+                    const contractorItem = document.createElement('li');
+                    contractorItem.className = 'flex items-center justify-between p-2 rounded-md bg-white border border-gray-200';
+                    contractorItem.innerHTML = `
+                        <span>${data.name} (${data.unit})</span>
+                        <button class="delete-contractor-btn text-red-500 hover:text-red-700 font-bold px-2" data-id="${doc.id}">
+                            &times;
+                        </button>
+                    `;
+                    contractorsList.appendChild(contractorItem);
+                });
+                document.querySelectorAll('.delete-contractor-btn').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const contractorId = e.target.dataset.id;
+                        try {
+                            await deleteDoc(doc(db, `artifacts/${appId}/public/data/contractors`, contractorId));
+                            showMessageBox('تم حذف المقاول بنجاح!');
+                        } catch (error) {
+                            console.error("Error deleting contractor:", error);
+                            showMessageBox('فشل في حذف المقاول.');
+                        }
+                    });
+                });
+            });
+        }
+        addContractorBtn.addEventListener('click', async () => {
+            const contractorName = prompt("أدخل اسم المقاول الجديد:");
+            if (!contractorName || contractorName.trim() === "") return;
+            const contractorUnit = prompt("أدخل وحدة المقاول (مثال: عقد):");
+            if (!contractorUnit || contractorUnit.trim() === "") return;
+            try {
+                await addDoc(contractorsCollectionRef, {
+                    name: contractorName.trim(),
+                    unit: contractorUnit.trim()
+                });
+                showMessageBox('تم إضافة المقاول بنجاح!');
+            } catch (error) {
+                console.error("Error adding contractor: ", error);
+                showMessageBox('فشل في إضافة المقاول.');
+            }
+        });
+
+        // إظهار/إخفاء الأقسام حسب نوع البند
+        itemTypeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'مواد') {
+                materialsSection.classList.remove('hidden');
+                workersSection.classList.add('hidden');
+                contractorsSection.classList.add('hidden');
+                materialNameSelect.required = true;
+                workerNameSelect.required = false;
+                contractorNameSelect.required = false;
+            } else if (e.target.value === 'عمالة') {
+                workersSection.classList.remove('hidden');
+                materialsSection.classList.add('hidden');
+                contractorsSection.classList.add('hidden');
+                workerNameSelect.required = true;
+                materialNameSelect.required = false;
+                contractorNameSelect.required = false;
+            } else if (e.target.value === 'مقاول') {
+                contractorsSection.classList.remove('hidden');
+                materialsSection.classList.add('hidden');
+                workersSection.classList.add('hidden');
+                contractorNameSelect.required = true;
+                materialNameSelect.required = false;
+                workerNameSelect.required = false;
+            } else {
+                materialsSection.classList.add('hidden');
+                workersSection.classList.add('hidden');
+                contractorsSection.classList.add('hidden');
+                materialNameSelect.required = false;
+                workerNameSelect.required = false;
+                contractorNameSelect.required = false;
+            }
+        });
+
+        // Update unit fields based on selection
+        materialNameSelect.addEventListener('change', (e) => {
+            const selectedMaterial = materials.find(m => m.name === e.target.value);
+            materialUnitInput.value = selectedMaterial ? selectedMaterial.unit : '';
+        });
+        workerNameSelect.addEventListener('change', (e) => {
+            const selectedWorker = workers.find(w => w.name === e.target.value);
+            workerUnitInput.value = selectedWorker ? selectedWorker.unit : '';
+        });
+        contractorNameSelect.addEventListener('change', (e) => {
+            const selectedContractor = contractors.find(c => c.name === e.target.value);
+            contractorUnitInput.value = selectedContractor ? selectedContractor.unit : '';
+        });
+
+        // إرسال التقرير
+        const form = document.getElementById('reportForm');
+        const printSection = document.getElementById('printSection');
+        const reportContent = document.getElementById('reportContent');
+
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            showMessageBox('جاري إرسال التقرير...');
-            
-            const formData = new FormData(reportForm);
-            const reportData = {
+            showMessageBox('جاري الإرسال...');
+            const formData = new FormData(form);
+            const data = {
                 employeeName: formData.get('employeeName'),
                 reportDate: formData.get('reportDate'),
                 projectName: formData.get('projectName'),
                 projectPhase: formData.get('projectPhase'),
                 itemType: formData.get('itemType'),
                 itemDescription: formData.get('itemDescription'),
-                submitterId: userId,
-                submitterDepartment: userDepartment,
-                timestamp: new Date(),
-                status: 'pending' // Initial status
+                costPerUnit: parseFloat(formData.get('costPerUnit')),
+                quantity: parseInt(formData.get('quantity')),
+                total: parseFloat(formData.get('costPerUnit')) * parseInt(formData.get('quantity')),
+                timestamp: new Date()
             };
-
-            if (reportData.itemType === 'مواد') {
-                reportData.materialName = formData.get('materialName');
-                reportData.materialUnit = formData.get('materialUnit');
-                reportData.quantity = parseFloat(formData.get('quantity'));
-                reportData.costPerUnit = parseFloat(formData.get('costPerUnit'));
-                reportData.status = 'pending-warehouse-approval';
-            } else if (reportData.itemType === 'عمالة') {
-                reportData.workerName = formData.get('workerName');
-                reportData.workerUnit = formData.get('workerUnit');
-                reportData.quantity = parseFloat(formData.get('quantity'));
-                reportData.costPerUnit = parseFloat(formData.get('costPerUnit'));
-                reportData.status = userDepartment === 'contracting' ? 'pending-contracting-engineer-approval' : 'pending-insulation-engineer-approval';
-            } else if (reportData.itemType === 'مقاول') {
-                reportData.contractorName = formData.get('contractorName');
-                reportData.contractorUnit = formData.get('contractorUnit');
-                reportData.quantity = parseFloat(formData.get('quantity'));
-                reportData.costPerUnit = parseFloat(formData.get('costPerUnit'));
-                reportData.status = 'pending-contracting-engineer-approval';
-            } else if (reportData.itemType === 'عهده') {
-                reportData.custodyItem = formData.get('custodyItem');
-                reportData.status = 'pending-contracting-engineer-approval';
+            // إضافة بيانات النوع المناسب
+            if (data.itemType === 'مواد') {
+                data.materialName = formData.get('materialName');
+                data.materialUnit = formData.get('materialUnit');
+                data.itemDescription = `${data.quantity} ${data.materialUnit} ${data.materialName}`;
+            } else if (data.itemType === 'عمالة') {
+                data.workerName = formData.get('workerName');
+                data.workerUnit = formData.get('workerUnit');
+                data.itemDescription = `${data.quantity} ${data.workerUnit} ${data.workerName}`;
+            } else if (data.itemType === 'مقاول') {
+                data.contractorName = formData.get('contractorName');
+                data.contractorUnit = formData.get('contractorUnit');
+                data.itemDescription = `${data.quantity} ${data.contractorUnit} ${data.contractorName}`;
             }
-
             try {
-                await addDoc(collection(db, `artifacts/${appId}/public/data/reports`), reportData);
-                showMessageBox('تم إرسال التقرير بنجاح. سيتم مراجعته قريباً.');
-                reportForm.reset();
-            } catch (error) {
-                console.error("Error submitting report:", error);
-                showMessageBox(`فشل إرسال التقرير: ${error.message}`);
-            }
-        });
-        try {
-                // IMPORTANT: Replace the following URL with the actual Webhook URL from Make.com
-                const webhookUrl = "https://hook.eu2.make.com/o7qcq7ab2muh8if6uyq58ljxehp3jjzj"; 
-
+                const webhookUrl = "https://hook.eu2.make.com/o7qcq7ab2muh8if6uyq58ljxehp3jjzj"; // ضع رابط الويب هوك هنا
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
                     headers: {
@@ -877,12 +805,9 @@
                     },
                     body: JSON.stringify(data),
                 });
-
                 if (response.ok) {
-                    // Save to Firestore after successful webhook call
                     const reportsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/reports`);
                     await addDoc(reportsCollectionRef, data);
-                    
                     showMessageBox('تم إرسال التقرير بنجاح!');
                     displayReportForPrinting(data);
                 } else {
@@ -895,6 +820,28 @@
         });
 
         function displayReportForPrinting(data) {
+            let itemDetails = `
+                <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
+            `;
+            if (data.itemType === 'مواد') {
+                itemDetails = `
+                    <tr><td>اسم المادة:</td><td>${data.materialName}</td></tr>
+                    <tr><td>وحدة المادة:</td><td>${data.materialUnit}</td></tr>
+                    <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
+                `;
+            } else if (data.itemType === 'عمالة') {
+                itemDetails = `
+                    <tr><td>اسم العامل:</td><td>${data.workerName}</td></tr>
+                    <tr><td>وحدة العامل:</td><td>${data.workerUnit}</td></tr>
+                    <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
+                `;
+            } else if (data.itemType === 'مقاول') {
+                itemDetails = `
+                    <tr><td>اسم المقاول:</td><td>${data.contractorName}</td></tr>
+                    <tr><td>وحدة المقاول:</td><td>${data.contractorUnit}</td></tr>
+                    <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
+                `;
+            }
             reportContent.innerHTML = `
                 <table class="print-table">
                     <tr><th>البند</th><th>التفاصيل</th></tr>
@@ -903,7 +850,7 @@
                     <tr><td>اسم المشروع:</td><td>${data.projectName}</td></tr>
                     <tr><td>مرحلة المشروع:</td><td>${data.projectPhase}</td></tr>
                     <tr><td>نوع البند:</td><td>${data.itemType}</td></tr>
-                    <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
+                    ${itemDetails}
                     <tr><td>التكلفة الفردية:</td><td>${data.costPerUnit}</td></tr>
                     <tr><td>الكمية:</td><td>${data.quantity}</td></tr>
                     <tr><td>الإجمالي:</td><td>${data.total}</td></tr>
@@ -919,18 +866,13 @@
             const margin = 10;
             const contentWidth = 190;
             const contentHeight = 277;
-
-            // Add Arabic font for PDF
             const font = await fetch('https://cdn.jsdelivr.net/npm/almarai-font/dist/Almarai-Regular.ttf');
             const fontData = await font.arrayBuffer();
             doc.addFileToVFS('Almarai-Regular.ttf', btoa(String.fromCharCode(...new Uint8Array(fontData))));
             doc.addFont('Almarai-Regular.ttf', 'Almarai', 'normal');
             doc.setFont('Almarai');
-
-            // Header
             doc.setFontSize(16);
             doc.text("تقرير يومي", doc.internal.pageSize.width / 2, 20, { align: 'center' });
-
             const htmlContent = reportElement.innerHTML;
             doc.html(htmlContent, {
                 callback: function (doc) {
@@ -946,7 +888,6 @@
             });
         }
         window.saveAsPdf = saveAsPdf;
-
     </script>
 </body>
 </html>
