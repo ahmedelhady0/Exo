@@ -67,6 +67,7 @@
                 <label for="authPassword" class="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
                 <input type="password" id="authPassword" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="أدخل كلمة المرور">
             </div>
+            <!-- لا يوجد قسم هنا، المدير فقط من يخصص القسم لاحقاً -->
             <div class="flex space-x-2 space-x-reverse">
                 <button type="button" id="signInBtn" class="flex-1 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
                     تسجيل الدخول
@@ -161,25 +162,6 @@
                     </div>
                 </div>
 
-                <!-- Contractors section -->
-                <div id="contractorsSection" class="space-y-4 hidden">
-                    <div>
-                        <label for="contractorName" class="block text-sm font-medium text-gray-700 mb-1">اسم المقاول</label>
-                        <div class="flex items-center space-x-2 space-x-reverse">
-                            <select id="contractorName" name="contractorName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
-                                <option value="" disabled selected>اختر المقاول</option>
-                            </select>
-                            <button type="button" id="addContractorBtn" class="flex-shrink-0 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out hidden">
-                                +
-                            </button>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="contractorUnit" class="block text-sm font-medium text-gray-700 mb-1">وحدة المقاول</label>
-                        <input type="text" id="contractorUnit" name="contractorUnit" readonly class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 p-2 border text-gray-500" placeholder="الوحدة تظهر هنا تلقائياً">
-                    </div>
-                </div>
-
                 <div>
                     <label for="itemType" class="block text-sm font-medium text-gray-700 mb-1">نوع البند</label>
                     <select id="itemType" name="itemType" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
@@ -245,13 +227,6 @@
                             <!-- Workers list will be populated here -->
                         </ul>
                     </div>
-                    <!-- Contractors Management Section -->
-                    <div class="bg-gray-100 p-4 rounded-md">
-                        <h3 class="font-bold mb-2">إدارة قائمة المقاولين</h3>
-                        <ul id="contractorsList" class="space-y-2 text-sm mt-2">
-                            <!-- Contractors list will be populated here -->
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>
@@ -286,9 +261,10 @@
         const auth = getAuth(app);
         
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const adminEmail = "ahmed@gmail.com"; // ضع ايميل المدير هنا
 
-        // Element references
+        // IMPORTANT: Update this with the actual email you want to use for the admin account
+        const adminEmail = "ahmed@gmail.com";
+
         const authStatusEl = document.getElementById('authStatus');
         const reportForm = document.getElementById('reportForm');
         const authForm = document.getElementById('authForm');
@@ -307,35 +283,25 @@
         const messageText = document.getElementById('messageText');
         const closeMessageBtn = document.getElementById('closeMessageBtn');
 
-        // Materials
         const itemTypeSelect = document.getElementById('itemType');
         const materialsSection = document.getElementById('materialsSection');
         const materialNameSelect = document.getElementById('materialName');
         const materialUnitInput = document.getElementById('materialUnit');
         const addMaterialBtn = document.getElementById('addMaterialBtn');
         const materialsList = document.getElementById('materialsList');
-        let materials = [];
 
-        // Workers
+        // Workers section
         const workersSection = document.getElementById('workersSection');
         const workerNameSelect = document.getElementById('workerName');
         const workerUnitInput = document.getElementById('workerUnit');
         const addWorkerBtn = document.getElementById('addWorkerBtn');
         const workersList = document.getElementById('workersList');
-        let workers = [];
-
-        // Contractors
-        const contractorsSection = document.getElementById('contractorsSection');
-        const contractorNameSelect = document.getElementById('contractorName');
-        const contractorUnitInput = document.getElementById('contractorUnit');
-        const addContractorBtn = document.getElementById('addContractorBtn');
-        const contractorsList = document.getElementById('contractorsList');
-        let contractors = [];
 
         let userRole = 'user';
         let userId = null;
+        let materials = []; // Cache materials locally
+        let workers = []; // Cache workers locally
 
-        // Auth logic
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         if (initialAuthToken) {
             signInWithCustomToken(auth, initialAuthToken).catch(error => {
@@ -367,7 +333,7 @@
                         userRole = userDocSnap.data().role;
                     } else {
                         const initialRole = (user.email && user.email.toLowerCase() === adminEmail.toLowerCase()) ? 'admin' : 'user';
-                        await setDoc(userDocRef, { role: initialRole, email: user.email, created: new Date() });
+                        await setDoc(userDocRef, { role: initialRole, email: user.email, department: "", created: new Date() });
                         userRole = initialRole;
                     }
                 } catch (error) {
@@ -376,31 +342,28 @@
                         userRole = 'admin';
                     }
                 }
+
                 authStatusEl.textContent = `مرحبًا! دورك: ${userRole}.`;
                 authForm.classList.add('hidden');
                 mainAppDiv.classList.remove('hidden');
                 reportForm.classList.remove('hidden');
                 adminPanelDiv.classList.add('hidden');
 
-                // زر إضافة يظهر للمدير فقط
                 if (userRole === 'admin') {
                     addProjectBtn.classList.remove('hidden');
                     addMaterialBtn.classList.remove('hidden');
                     addWorkerBtn.classList.remove('hidden');
-                    addContractorBtn.classList.remove('hidden');
                     adminPanelBtn.classList.remove('hidden');
                 } else {
                     addProjectBtn.classList.add('hidden');
                     addMaterialBtn.classList.add('hidden');
                     addWorkerBtn.classList.add('hidden');
-                    addContractorBtn.classList.add('hidden');
                     adminPanelBtn.classList.add('hidden');
                 }
-
+                
                 fetchProjects();
                 fetchMaterials();
                 fetchWorkers();
-                fetchContractors();
             } else {
                 authStatusEl.textContent = 'من فضلك قم بتسجيل الدخول أو إنشاء حساب.';
                 authForm.classList.remove('hidden');
@@ -424,7 +387,7 @@
                 if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                     showMessageBox('فشل تسجيل الدخول: البريد الإلكتروني أو كلمة المرور غير صحيحة.');
                 } else if (error.code === 'auth/api-key-not-valid') {
-                    showMessageBox('فشل المصادقة: مفتاح API غير صالح. يرجى التحقق من إعدادات مشروعك.');
+                     showMessageBox('فشل المصادقة: مفتاح API غير صالح. يرجى التحقق من إعدادات مشروعك.');
                 } else {
                     showMessageBox(`فشل تسجيل الدخول: ${error.message}`);
                 }
@@ -439,7 +402,7 @@
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const newUser = userCredential.user;
                 const userDocRef = doc(db, `artifacts/${appId}/public/data/users`, newUser.uid);
-                await setDoc(userDocRef, { role: 'user', email: newUser.email, created: new Date() });
+                await setDoc(userDocRef, { role: 'user', email: newUser.email, department: "", created: new Date() });
                 showMessageBox('تم إنشاء الحساب بنجاح. يمكنك الآن تسجيل الدخول.');
                 setTimeout(() => {
                     messageBox.classList.add('hidden');
@@ -450,7 +413,7 @@
                  if (error.code === 'auth/email-already-in-use') {
                     showMessageBox('فشل إنشاء الحساب: هذا البريد الإلكتروني مستخدم بالفعل. استخدم بريداً آخر أو قم بتسجيل الدخول.');
                 } else if (error.code === 'auth/api-key-not-valid') {
-                    showMessageBox('فشل المصادقة: مفتاح API غير صالح. يرجى التحقق من إعدادات مشروعك.');
+                     showMessageBox('فشل المصادقة: مفتاح API غير صالح. يرجى التحقق من إعدادات مشروعك.');
                 } else {
                     showMessageBox(`فشل إنشاء الحساب: ${error.message}`);
                 }
@@ -461,7 +424,7 @@
             await signOut(auth);
             showMessageBox('تم تسجيل الخروج بنجاح.');
         });
-
+        
         adminPanelBtn.addEventListener('click', () => {
             if (adminPanelDiv.classList.contains('hidden')) {
                 reportForm.classList.add('hidden');
@@ -469,13 +432,12 @@
                 fetchUsers();
                 fetchMaterials();
                 fetchWorkers();
-                fetchContractors();
             } else {
                 reportForm.classList.remove('hidden');
                 adminPanelDiv.classList.add('hidden');
             }
         });
-
+        
         async function fetchUsers() {
             usersList.innerHTML = '<li class="text-center text-gray-500">جاري تحميل المستخدمين...</li>';
             const usersCollectionRef = collection(db, `artifacts/${appId}/public/data/users`);
@@ -486,13 +448,31 @@
                     const data = userDoc.data();
                     const userItem = document.createElement('li');
                     userItem.className = 'flex items-center justify-between p-2 rounded-md bg-white border border-gray-200';
+                    
                     const userInfo = document.createElement('span');
                     userInfo.className = 'text-gray-800';
+                    
                     const emailDisplay = data.email ? data.email : `User ID: ${userDoc.id}`;
                     userInfo.textContent = `المستخدم: ${emailDisplay} | الدور: ${data.role}`;
+
+                    // قسم المستخدم
+                    const departmentSelect = document.createElement('select');
+                    departmentSelect.className = 'mx-2 border rounded px-2 py-1';
+                    departmentSelect.innerHTML = `
+                        <option value="">بدون قسم</option>
+                        <option value="مقاولات">مقاولات</option>
+                        <option value="عزل">عزل</option>
+                    `;
+                    departmentSelect.value = data.department || "";
+                    departmentSelect.addEventListener('change', async () => {
+                        await setDoc(userDoc.ref, { department: departmentSelect.value }, { merge: true });
+                        showMessageBox(`تم تحديث قسم المستخدم إلى: ${departmentSelect.value}`);
+                    });
+
                     const roleBtn = document.createElement('button');
                     roleBtn.className = `py-1 px-3 text-xs font-medium rounded-md transition duration-150 ease-in-out ${data.role === 'admin' ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`;
                     roleBtn.textContent = data.role === 'admin' ? 'إزالة صلاحية المدير' : 'منح صلاحية المدير';
+                    
                     if (userDoc.id === userId) {
                         roleBtn.disabled = true;
                         roleBtn.textContent = 'دورك الحالي';
@@ -505,7 +485,9 @@
                             fetchUsers();
                         });
                     }
+                    
                     userItem.appendChild(userInfo);
+                    userItem.appendChild(departmentSelect);
                     userItem.appendChild(roleBtn);
                     usersList.appendChild(userItem);
                 });
@@ -515,15 +497,17 @@
             }
         }
 
-        // Projects
         const projectsCollectionRef = collection(db, `artifacts/${appId}/public/data/projects`);
+        
         function fetchProjects() {
             onSnapshot(projectsCollectionRef, (snapshot) => {
                 const projects = [];
                 snapshot.forEach(doc => {
                     projects.push(doc.data());
                 });
+
                 projects.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+
                 projectSelect.innerHTML = '<option value="" disabled selected>اختر مشروعًا أو أضف جديدًا</option>';
                 projects.forEach(project => {
                     const option = document.createElement('option');
@@ -533,6 +517,7 @@
                 });
             });
         }
+
         addProjectBtn.addEventListener('click', async () => {
             const newProjectName = prompt("أدخل اسم المشروع الجديد:");
             if (newProjectName && newProjectName.trim() !== "") {
@@ -548,6 +533,7 @@
 
         // Materials functionality
         const materialsCollectionRef = collection(db, `artifacts/${appId}/public/data/materials`);
+
         function fetchMaterials() {
             onSnapshot(materialsCollectionRef, (snapshot) => {
                 materials = [];
@@ -556,11 +542,14 @@
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     materials.push({ id: doc.id, ...data });
+
+                    // Populate the dropdown for the user
                     const option = document.createElement('option');
                     option.value = data.name;
                     option.textContent = `${data.name} (${data.unit})`;
                     materialNameSelect.appendChild(option);
-                    // Manage in admin panel
+
+                    // Populate the admin list
                     const materialItem = document.createElement('li');
                     materialItem.className = 'flex items-center justify-between p-2 rounded-md bg-white border border-gray-200';
                     materialItem.innerHTML = `
@@ -571,6 +560,7 @@
                     `;
                     materialsList.appendChild(materialItem);
                 });
+
                 document.querySelectorAll('.delete-material-btn').forEach(button => {
                     button.addEventListener('click', async (e) => {
                         const materialId = e.target.dataset.id;
@@ -585,25 +575,10 @@
                 });
             });
         }
-        addMaterialBtn.addEventListener('click', async () => {
-            const materialName = prompt("أدخل اسم المادة الجديدة (مثال: أسمنت):");
-            if (!materialName || materialName.trim() === "") return;
-            const materialUnit = prompt("أدخل وحدة قياس المادة (مثال: كيس):");
-            if (!materialUnit || materialUnit.trim() === "") return;
-            try {
-                await addDoc(materialsCollectionRef, {
-                    name: materialName.trim(),
-                    unit: materialUnit.trim()
-                });
-                showMessageBox('تم إضافة المادة بنجاح!');
-            } catch (error) {
-                console.error("Error adding material: ", error);
-                showMessageBox('فشل في إضافة المادة.');
-            }
-        });
 
         // Workers functionality
         const workersCollectionRef = collection(db, `artifacts/${appId}/public/data/workers`);
+
         function fetchWorkers() {
             onSnapshot(workersCollectionRef, (snapshot) => {
                 workers = [];
@@ -612,21 +587,23 @@
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     workers.push({ id: doc.id, ...data });
+
+                    // Populate dropdown
                     const option = document.createElement('option');
                     option.value = data.name;
                     option.textContent = `${data.name} (${data.unit})`;
                     workerNameSelect.appendChild(option);
-                    // Manage in admin panel
+
+                    // Populate admin list
                     const workerItem = document.createElement('li');
                     workerItem.className = 'flex items-center justify-between p-2 rounded-md bg-white border border-gray-200';
                     workerItem.innerHTML = `
                         <span>${data.name} (${data.unit})</span>
-                        <button class="delete-worker-btn text-red-500 hover:text-red-700 font-bold px-2" data-id="${doc.id}">
-                            &times;
-                        </button>
+                        <button class="delete-worker-btn text-red-500 hover:text-red-700 font-bold px-2" data-id="${doc.id}">&times;</button>
                     `;
                     workersList.appendChild(workerItem);
                 });
+
                 document.querySelectorAll('.delete-worker-btn').forEach(button => {
                     button.addEventListener('click', async (e) => {
                         const workerId = e.target.dataset.id;
@@ -641,11 +618,31 @@
                 });
             });
         }
+
+        addMaterialBtn.addEventListener('click', async () => {
+            const materialName = prompt("أدخل اسم المادة الجديدة (مثال: أسمنت):");
+            if (!materialName || materialName.trim() === "") return;
+            const materialUnit = prompt("أدخل وحدة قياس المادة (مثال: كيس):");
+            if (!materialUnit || materialUnit.trim() === "") return;
+
+            try {
+                await addDoc(materialsCollectionRef, {
+                    name: materialName.trim(),
+                    unit: materialUnit.trim()
+                });
+                showMessageBox('تم إضافة المادة بنجاح!');
+            } catch (error) {
+                console.error("Error adding material: ", error);
+                showMessageBox('فشل في إضافة المادة.');
+            }
+        });
+
         addWorkerBtn.addEventListener('click', async () => {
-            const workerName = prompt("أدخل اسم العامل الجديد:");
+            const workerName = prompt("أدخل اسم العامل الجديد (مثال: أحمد):");
             if (!workerName || workerName.trim() === "") return;
-            const workerUnit = prompt("أدخل وحدة العامل (مثال: يوم):");
+            const workerUnit = prompt("أدخل وحدة العامل (مثال: يومية أو ساعة):");
             if (!workerUnit || workerUnit.trim() === "") return;
+
             try {
                 await addDoc(workersCollectionRef, {
                     name: workerName.trim(),
@@ -658,110 +655,41 @@
             }
         });
 
-        // Contractors functionality
-        const contractorsCollectionRef = collection(db, `artifacts/${appId}/public/data/contractors`);
-        function fetchContractors() {
-            onSnapshot(contractorsCollectionRef, (snapshot) => {
-                contractors = [];
-                contractorNameSelect.innerHTML = '<option value="" disabled selected>اختر المقاول</option>';
-                contractorsList.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    contractors.push({ id: doc.id, ...data });
-                    const option = document.createElement('option');
-                    option.value = data.name;
-                    option.textContent = `${data.name} (${data.unit})`;
-                    contractorNameSelect.appendChild(option);
-                    // Manage in admin panel
-                    const contractorItem = document.createElement('li');
-                    contractorItem.className = 'flex items-center justify-between p-2 rounded-md bg-white border border-gray-200';
-                    contractorItem.innerHTML = `
-                        <span>${data.name} (${data.unit})</span>
-                        <button class="delete-contractor-btn text-red-500 hover:text-red-700 font-bold px-2" data-id="${doc.id}">
-                            &times;
-                        </button>
-                    `;
-                    contractorsList.appendChild(contractorItem);
-                });
-                document.querySelectorAll('.delete-contractor-btn').forEach(button => {
-                    button.addEventListener('click', async (e) => {
-                        const contractorId = e.target.dataset.id;
-                        try {
-                            await deleteDoc(doc(db, `artifacts/${appId}/public/data/contractors`, contractorId));
-                            showMessageBox('تم حذف المقاول بنجاح!');
-                        } catch (error) {
-                            console.error("Error deleting contractor:", error);
-                            showMessageBox('فشل في حذف المقاول.');
-                        }
-                    });
-                });
-            });
-        }
-        addContractorBtn.addEventListener('click', async () => {
-            const contractorName = prompt("أدخل اسم المقاول الجديد:");
-            if (!contractorName || contractorName.trim() === "") return;
-            const contractorUnit = prompt("أدخل وحدة المقاول (مثال: عقد):");
-            if (!contractorUnit || contractorUnit.trim() === "") return;
-            try {
-                await addDoc(contractorsCollectionRef, {
-                    name: contractorName.trim(),
-                    unit: contractorUnit.trim()
-                });
-                showMessageBox('تم إضافة المقاول بنجاح!');
-            } catch (error) {
-                console.error("Error adding contractor: ", error);
-                showMessageBox('فشل في إضافة المقاول.');
-            }
-        });
-
-        // إظهار/إخفاء الأقسام حسب نوع البند
+        // Show/hide materials/workers dropdown based on item type
         itemTypeSelect.addEventListener('change', (e) => {
             if (e.target.value === 'مواد') {
                 materialsSection.classList.remove('hidden');
-                workersSection.classList.add('hidden');
-                contractorsSection.classList.add('hidden');
                 materialNameSelect.required = true;
+                workersSection.classList.add('hidden');
                 workerNameSelect.required = false;
-                contractorNameSelect.required = false;
             } else if (e.target.value === 'عمالة') {
                 workersSection.classList.remove('hidden');
-                materialsSection.classList.add('hidden');
-                contractorsSection.classList.add('hidden');
                 workerNameSelect.required = true;
-                materialNameSelect.required = false;
-                contractorNameSelect.required = false;
-            } else if (e.target.value === 'مقاول') {
-                contractorsSection.classList.remove('hidden');
                 materialsSection.classList.add('hidden');
-                workersSection.classList.add('hidden');
-                contractorNameSelect.required = true;
                 materialNameSelect.required = false;
-                workerNameSelect.required = false;
             } else {
                 materialsSection.classList.add('hidden');
-                workersSection.classList.add('hidden');
-                contractorsSection.classList.add('hidden');
                 materialNameSelect.required = false;
+                workersSection.classList.add('hidden');
                 workerNameSelect.required = false;
-                contractorNameSelect.required = false;
             }
         });
 
-        // Update unit fields based on selection
+        // Update material unit when a material is selected
         materialNameSelect.addEventListener('change', (e) => {
             const selectedMaterial = materials.find(m => m.name === e.target.value);
-            materialUnitInput.value = selectedMaterial ? selectedMaterial.unit : '';
+            if (selectedMaterial) {
+                materialUnitInput.value = selectedMaterial.unit;
+            } else {
+                materialUnitInput.value = '';
+            }
         });
+        // Update worker unit when a worker is selected
         workerNameSelect.addEventListener('change', (e) => {
             const selectedWorker = workers.find(w => w.name === e.target.value);
             workerUnitInput.value = selectedWorker ? selectedWorker.unit : '';
         });
-        contractorNameSelect.addEventListener('change', (e) => {
-            const selectedContractor = contractors.find(c => c.name === e.target.value);
-            contractorUnitInput.value = selectedContractor ? selectedContractor.unit : '';
-        });
 
-        // إرسال التقرير
         const form = document.getElementById('reportForm');
         const printSection = document.getElementById('printSection');
         const reportContent = document.getElementById('reportContent');
@@ -769,6 +697,7 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             showMessageBox('جاري الإرسال...');
+
             const formData = new FormData(form);
             const data = {
                 employeeName: formData.get('employeeName'),
@@ -777,117 +706,4 @@
                 projectPhase: formData.get('projectPhase'),
                 itemType: formData.get('itemType'),
                 itemDescription: formData.get('itemDescription'),
-                costPerUnit: parseFloat(formData.get('costPerUnit')),
-                quantity: parseInt(formData.get('quantity')),
-                total: parseFloat(formData.get('costPerUnit')) * parseInt(formData.get('quantity')),
-                timestamp: new Date()
-            };
-            // إضافة بيانات النوع المناسب
-            if (data.itemType === 'مواد') {
-                data.materialName = formData.get('materialName');
-                data.materialUnit = formData.get('materialUnit');
-                data.itemDescription = `${data.quantity} ${data.materialUnit} ${data.materialName}`;
-            } else if (data.itemType === 'عمالة') {
-                data.workerName = formData.get('workerName');
-                data.workerUnit = formData.get('workerUnit');
-                data.itemDescription = `${data.quantity} ${data.workerUnit} ${data.workerName}`;
-            } else if (data.itemType === 'مقاول') {
-                data.contractorName = formData.get('contractorName');
-                data.contractorUnit = formData.get('contractorUnit');
-                data.itemDescription = `${data.quantity} ${data.contractorUnit} ${data.contractorName}`;
-            }
-            try {
-                const webhookUrl = "YOUR_MAKE_COM_WEBHOOK_URL_HERE"; // ضع رابط الويب هوك هنا
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
-                });
-                if (response.ok) {
-                    const reportsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/reports`);
-                    await addDoc(reportsCollectionRef, data);
-                    showMessageBox('تم إرسال التقرير بنجاح!');
-                    displayReportForPrinting(data);
-                } else {
-                    throw new Error(`Failed to send data. Status: ${response.status}`);
-                }
-            } catch (error) {
-                console.error("Error:", error);
-                showMessageBox(`فشل الإرسال: ${error.message}`);
-            }
-        });
-
-        function displayReportForPrinting(data) {
-            let itemDetails = `
-                <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
-            `;
-            if (data.itemType === 'مواد') {
-                itemDetails = `
-                    <tr><td>اسم المادة:</td><td>${data.materialName}</td></tr>
-                    <tr><td>وحدة المادة:</td><td>${data.materialUnit}</td></tr>
-                    <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
-                `;
-            } else if (data.itemType === 'عمالة') {
-                itemDetails = `
-                    <tr><td>اسم العامل:</td><td>${data.workerName}</td></tr>
-                    <tr><td>وحدة العامل:</td><td>${data.workerUnit}</td></tr>
-                    <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
-                `;
-            } else if (data.itemType === 'مقاول') {
-                itemDetails = `
-                    <tr><td>اسم المقاول:</td><td>${data.contractorName}</td></tr>
-                    <tr><td>وحدة المقاول:</td><td>${data.contractorUnit}</td></tr>
-                    <tr><td>وصف البند:</td><td>${data.itemDescription}</td></tr>
-                `;
-            }
-            reportContent.innerHTML = `
-                <table class="print-table">
-                    <tr><th>البند</th><th>التفاصيل</th></tr>
-                    <tr><td>اسم الموظف:</td><td>${data.employeeName}</td></tr>
-                    <tr><td>التاريخ:</td><td>${data.reportDate}</td></tr>
-                    <tr><td>اسم المشروع:</td><td>${data.projectName}</td></tr>
-                    <tr><td>مرحلة المشروع:</td><td>${data.projectPhase}</td></tr>
-                    <tr><td>نوع البند:</td><td>${data.itemType}</td></tr>
-                    ${itemDetails}
-                    <tr><td>التكلفة الفردية:</td><td>${data.costPerUnit}</td></tr>
-                    <tr><td>الكمية:</td><td>${data.quantity}</td></tr>
-                    <tr><td>الإجمالي:</td><td>${data.total}</td></tr>
-                </table>
-            `;
-            printSection.classList.remove('hidden');
-        }
-
-        async function saveAsPdf() {
-            const reportElement = document.getElementById('reportContent');
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const margin = 10;
-            const contentWidth = 190;
-            const contentHeight = 277;
-            const font = await fetch('https://cdn.jsdelivr.net/npm/almarai-font/dist/Almarai-Regular.ttf');
-            const fontData = await font.arrayBuffer();
-            doc.addFileToVFS('Almarai-Regular.ttf', btoa(String.fromCharCode(...new Uint8Array(fontData))));
-            doc.addFont('Almarai-Regular.ttf', 'Almarai', 'normal');
-            doc.setFont('Almarai');
-            doc.setFontSize(16);
-            doc.text("تقرير يومي", doc.internal.pageSize.width / 2, 20, { align: 'center' });
-            const htmlContent = reportElement.innerHTML;
-            doc.html(htmlContent, {
-                callback: function (doc) {
-                    doc.save('daily-report.pdf');
-                },
-                x: margin,
-                y: 30,
-                width: contentWidth,
-                windowWidth: reportElement.scrollWidth,
-                html2canvas: {
-                    scale: 0.8
-                }
-            });
-        }
-        window.saveAsPdf = saveAsPdf;
-    </script>
-</body>
-</html>
+               
