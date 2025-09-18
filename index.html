@@ -91,13 +91,165 @@
             <!-- User Report Form -->
             <form id="reportForm" class="space-y-4">
                 <h2 class="text-xl font-semibold text-gray-800 text-center">إرسال تقرير جديد</h2>
-                <!-- حقل الرقم التسلسلي التلقائي -->
-        <div class="mb-6">
-            <label class="block text-gray-700 font-semibold mb-2">الرقم التسلسلي للتقرير</label>
-            <p id="serial-number-display" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 text-right font-mono"></p>
-        </div>
-              
+                <!-- Main Container -->
+    <div class="w-full max-w-md p-8 bg-white rounded-2xl shadow-xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">الرقم التسلسلي للمنزل</h1>
+        <p class="text-sm text-gray-500 text-center mb-6">
+            هذا الرقم ثابت ويتحدث فقط عند إرسال تقرير جديد.
+        </p>
 
+        <!-- Display Serial Number -->
+        <div class="flex flex-col items-center justify-center space-y-4 mb-8">
+            <p class="text-gray-500 text-lg">الرقم الحالي:</p>
+            <div id="serial-number-display" class="bg-blue-100 text-blue-800 text-5xl font-extrabold px-6 py-4 rounded-xl shadow-inner animate-pulse transition-all duration-300">
+                جاري التحميل...
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="flex justify-center">
+            <button id="update-button" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+                إرسال التقرير وتحديث الرقم
+            </button>
+        </div>
+
+        <!-- Status & Messages -->
+        <div id="status-message" class="text-center mt-6 text-gray-700 font-medium"></div>
+
+        <!-- User and App Info -->
+        <div class="mt-8 text-center text-xs text-gray-400 space-y-1">
+            <p id="app-id-info">معرف التطبيق: جاري التحميل...</p>
+            <p id="user-id-info">معرف المستخدم: جاري التحميل...</p>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, getDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        setLogLevel('debug'); // Enable Firestore debug logging
+
+        const serialNumberDisplay = document.getElementById('serial-number-display');
+        const updateButton = document.getElementById('update-button');
+        const statusMessage = document.getElementById('status-message');
+        const appIdInfo = document.getElementById('app-id-info');
+        const userIdInfo = document.getElementById('user-id-info');
+
+        // Firestore paths
+        let db, auth;
+        let userId = 'جاري التحميل...';
+        const docRefPath = 'house_serial';
+        let collectionPath = '';
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        appIdInfo.textContent = `معرف التطبيق: ${appId}`;
+
+        // Initialize Firebase
+        if (Object.keys(firebaseConfig).length > 0) {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Authentication state listener
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    userIdInfo.textContent = `معرف المستخدم: ${userId}`;
+                    collectionPath = `/artifacts/${appId}/public/data/serialNumbers`;
+                    fetchSerialNumber();
+                } else {
+                    // Sign in with custom token if available, otherwise anonymously
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error('Authentication Error:', error);
+                        statusMessage.textContent = 'خطأ في المصادقة. يرجى إعادة المحاولة.';
+                    }
+                }
+            });
+        } else {
+            console.error('Firebase config not provided.');
+            statusMessage.textContent = 'خطأ: لم يتم توفير تهيئة Firebase.';
+        }
+
+        // Fetch serial number using a real-time listener (onSnapshot)
+        function fetchSerialNumber() {
+            if (!db || !collectionPath) return;
+
+            const serialDocRef = doc(db, collectionPath, docRefPath);
+            onSnapshot(serialDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    serialNumberDisplay.textContent = data.serialNumber || 'لا يوجد رقم';
+                    console.log('Serial number updated in real-time:', data.serialNumber);
+                    statusMessage.textContent = 'الرقم التسلسلي جاهز.';
+                } else {
+                    serialNumberDisplay.textContent = 'لا يوجد رقم';
+                    console.log('No such document! Initializing...');
+                    // Initialize the document with a starting number
+                    setDoc(serialDocRef, { serialNumber: 1000 }).then(() => {
+                        console.log('Document initialized successfully.');
+                    }).catch(error => {
+                        console.error('Error initializing document:', error);
+                        statusMessage.textContent = 'خطأ في تهيئة الرقم التسلسلي.';
+                    });
+                }
+                updateButton.disabled = false;
+                updateButton.textContent = 'إرسال التقرير وتحديث الرقم';
+            }, (error) => {
+                console.error('Error listening to serial number:', error);
+                statusMessage.textContent = 'خطأ في الاتصال بقاعدة البيانات.';
+            });
+        }
+
+        // Update the serial number
+        async function updateSerialNumber() {
+            if (!db || !collectionPath) {
+                console.error('Database not ready.');
+                statusMessage.textContent = 'قاعدة البيانات غير جاهزة.';
+                return;
+            }
+
+            updateButton.disabled = true;
+            updateButton.textContent = 'جاري التحديث...';
+
+            const serialDocRef = doc(db, collectionPath, docRefPath);
+            
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const docSnap = await transaction.get(serialDocRef);
+                    if (!docSnap.exists()) {
+                        throw "Document does not exist!";
+                    }
+
+                    const currentNumber = docSnap.data().serialNumber;
+                    const newNumber = currentNumber + 1;
+                    transaction.update(serialDocRef, { serialNumber: newNumber });
+                });
+                console.log('Transaction successfully committed!');
+                statusMessage.textContent = 'تم إرسال التقرير بنجاح، الرقم التسلسلي محدث.';
+            } catch (e) {
+                console.error('Transaction failed:', e);
+                statusMessage.textContent = 'فشل تحديث الرقم التسلسلي. يرجى المحاولة مرة أخرى.';
+            } finally {
+                updateButton.disabled = false;
+                updateButton.textContent = 'إرسال التقرير وتحديث الرقم';
+            }
+        }
+
+        // Event listener for the update button
+        updateButton.addEventListener('click', updateSerialNumber);
                 <div>
                     <label for="employeeName" class="block text-sm font-medium text-gray-700 mb-1">اسم الموظف</label>
                     <input type="text" id="employeeName" name="employeeName" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border" placeholder="أدخل اسمك">
@@ -107,16 +259,6 @@
                     <label for="reportDate" class="block text-sm font-medium text-gray-700 mb-1">التاريخ</label>
                     <input type="date" id="reportDate" name="reportDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out p-2 border">
                 </div>
-                <!-- القائمة المنسدلة للقسم -->
-        <div class="mb-6">
-            <label for="section" class="block text-gray-700 font-semibold mb-2">القسم</label>
-            <select id="section" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 text-right appearance-none bg-white">
-                <option value="" disabled selected class="text-gray-400">اختر القسم</option>
-                <option value="contracting">مقاولات</option>
-                <option value="insulation">عزل</option>
-            </select>
-        </div>
-
 
                 <div>
                     <label for="projectName" class="block text-sm font-medium text-gray-700 mb-1">اسم المشروع</label>
@@ -529,70 +671,9 @@
             } catch (error) {
                 console.error("Error fetching users:", error);
                 usersList.innerHTML = '<li class="text-center text-red-500">فشل في تحميل قائمة المستخدمين.</li>';
-       // دالة لإنشاء رقم تسلسلي فريد
-function generateSerialNumber() {
-    const now = new Date();
-    const year = now.getFullYear().toString();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const day = now.getDate().toString().padStart(2, '0');
-    const random = Math.floor(1000 + Math.random() * 9000).toString();
-    return `R-${year}${month}${day}-${random}`;
-}
-
-
-
-// احذف أي استدعاء لـ updateSerialNumber() أو توليد الرقم عند تحميل الصفحة
-
-let pendingSerialNumber = null; // رقم تسلسلي يتم توليده فقط عند أول فتح للنموذج
-
-function generateSerialNumber() {
-    const now = new Date();
-    const year = now.getFullYear().toString();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const day = now.getDate().toString().padStart(2, '0');
-    const random = Math.floor(1000 + Math.random() * 9000).toString();
-    return `R-${year}${month}${day}-${random}`;
-}
-
-// توليد الرقم التسلسلي مرة واحدة فقط عند أول فتح للنموذج
-function prepareSerialNumber() {
-    if (!pendingSerialNumber) {
-        pendingSerialNumber = generateSerialNumber();
-        const serialNumberDisplay = document.getElementById('serial-number-display');
-        if (serialNumberDisplay) {
-            serialNumberDisplay.textContent = pendingSerialNumber;
+            }
         }
-    }
-}
 
-// استدعِ هذه الدالة فقط عند فتح النموذج (مثلاً بعد تسجيل الدخول وعرض النموذج)
-onAuthStateChanged(auth, async (user) => {
-    // ... باقي الكود
-    if (user) {
-        // ... باقي الكود
-        prepareSerialNumber();
-    }
-    // ... باقي الكود
-});
-
-// عند إرسال التقرير: استخدم الرقم المخزن في pendingSerialNumber وأعد توليده بعد الإرسال
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    showMessageBox('جاري الإرسال...');
-    const serialNumber = pendingSerialNumber; // الرقم الحالي
-    // باقي بيانات التقرير...
-    const data = {
-        serialNumber: serialNumber,
-        // باقي الخصائص
-    };
-    // ... إرسال التقرير
-    if (response.ok) {
-        // ... حفظ التقرير وعرضه
-        pendingSerialNumber = null; // تصفير الرقم ليتم توليد رقم جديد لاحقاً
-        prepareSerialNumber(); // توليد رقم لتقرير جديد
-        displayReportForPrinting(data);
-    }
-});
         // Projects
         const projectsCollectionRef = collection(db, `artifacts/${appId}/public/data/projects`);
         function fetchProjects() {
@@ -875,7 +956,7 @@ form.addEventListener('submit', async (e) => {
                 data.itemDescription = `${data.quantity} ${data.contractorUnit} ${data.contractorName}`;
             }
             try {
-                const webhookUrl = "https://hook.eu2.make.com/o7qcq7ab2muh8if6uyq58ljxehp3jjzj"; // ضع رابط الويب هوك هنا
+                const webhookUrl = "YOUR_MAKE_COM_WEBHOOK_URL_HERE"; // ضع رابط الويب هوك هنا
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
                     headers: {
@@ -921,22 +1002,21 @@ form.addEventListener('submit', async (e) => {
                 `;
             }
             reportContent.innerHTML = `
-        <table class="print-table">
-            <tr><th>البند</th><th>التفاصيل</th></tr>
-            <tr><td>الرقم التسلسلي:</td><td>${data.serialNumber}</td></tr>
-            <tr><td>اسم الموظف:</td><td>${data.employeeName}</td></tr>
-            <tr><td>التاريخ:</td><td>${data.reportDate}</td></tr>
-            <tr><td>اسم المشروع:</td><td>${data.projectName}</td></tr>
-            <tr><td>مرحلة المشروع:</td><td>${data.projectPhase}</td></tr>
-            <tr><td>نوع البند:</td><td>${data.itemType}</td></tr>
-            ${itemDetails}
-            <tr><td>التكلفة الفردية:</td><td>${data.costPerUnit}</td></tr>
-            <tr><td>الكمية:</td><td>${data.quantity}</td></tr>
-            <tr><td>الإجمالي:</td><td>${data.total}</td></tr>
-        </table>
-    `;
-    printSection.classList.remove('hidden');
-}
+                <table class="print-table">
+                    <tr><th>البند</th><th>التفاصيل</th></tr>
+                    <tr><td>اسم الموظف:</td><td>${data.employeeName}</td></tr>
+                    <tr><td>التاريخ:</td><td>${data.reportDate}</td></tr>
+                    <tr><td>اسم المشروع:</td><td>${data.projectName}</td></tr>
+                    <tr><td>مرحلة المشروع:</td><td>${data.projectPhase}</td></tr>
+                    <tr><td>نوع البند:</td><td>${data.itemType}</td></tr>
+                    ${itemDetails}
+                    <tr><td>التكلفة الفردية:</td><td>${data.costPerUnit}</td></tr>
+                    <tr><td>الكمية:</td><td>${data.quantity}</td></tr>
+                    <tr><td>الإجمالي:</td><td>${data.total}</td></tr>
+                </table>
+            `;
+            printSection.classList.remove('hidden');
+        }
 
         async function saveAsPdf() {
             const reportElement = document.getElementById('reportContent');
@@ -970,13 +1050,4 @@ form.addEventListener('submit', async (e) => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
 
