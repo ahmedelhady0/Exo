@@ -36,6 +36,7 @@ class DashboardManager {
         this.initListeners();
         this.loadInitialData();
         this.checkAuthStatus();
+        this.setupTabSwitching();
     }
 
     // Initialize all event listeners
@@ -63,6 +64,30 @@ class DashboardManager {
         if (this.contractorNameSelect) {
             this.contractorNameSelect.addEventListener('change', this.handleContractorNameChange.bind(this));
         }
+    }
+
+    // New method to handle tab switching
+    setupTabSwitching() {
+        const navLinks = document.querySelectorAll('.nav-link');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetTab = e.target.getAttribute('data-tab');
+
+                // Hide all tab contents
+                tabContents.forEach(tab => {
+                    tab.classList.add('hidden');
+                });
+
+                // Show the selected tab content
+                const selectedTab = document.getElementById(targetTab + 'Tab');
+                if (selectedTab) {
+                    selectedTab.classList.remove('hidden');
+                }
+            });
+        });
     }
 
     async handleSignOut() {
