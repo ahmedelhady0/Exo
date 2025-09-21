@@ -1,6 +1,6 @@
 // Dashboard functionality with Firebase
 import { auth, db, appId, adminUsername } from './auth.js';
-import { onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { collection, onSnapshot, addDoc, doc, getDoc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 class DashboardManager {
@@ -92,13 +92,7 @@ class DashboardManager {
                 this.fetchContractors();
 
             } else {
-                console.log("No user is authenticated. Attempting anonymous sign-in.");
-                try {
-                    await signInAnonymously(auth);
-                } catch (error) {
-                    console.error("Anonymous sign-in failed:", error);
-                    this.showMessage("فشل تسجيل الدخول التلقائي. يرجى إعادة تحميل الصفحة.");
-                }
+                console.log("No user is authenticated. Redirecting to login page.");
             }
         });
     }
