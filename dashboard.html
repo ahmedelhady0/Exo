@@ -55,12 +55,9 @@
                             </select>
                         </div>
                         <div>
-                            <label for="projectPhase" class="block text-sm font-semibold text-gray-700 mb-2">مرحلة المشروع</label>
-                            <select id="projectPhase" name="projectPhase" required class="input-field mt-1 block w-full shadow-sm p-3">
+                            <label for="projectName" class="block text-sm font-semibold text-gray-700 mb-2">اسم المرحلة</label>
+                            <select id="projectName" name="projectName" required class="input-field mt-1 block w-full shadow-sm p-3">
                                 <option value="" disabled selected>اختر المرحلة</option>
-                                <option value="الأسطح">الأسطح</option>
-                                <option value="الخزانات">الخزانات</option>
-                                <option value="الحمامات">الحمامات</option>
                             </select>
                         </div>
                     </div>
@@ -174,8 +171,8 @@
                                 <input type="text" id="newProjectName" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="أدخل اسم المشروع">
                             </div>
                             <div>
-                                <label for="newProjectPhases" class="block text-sm font-semibold text-gray-700 mb-2">المراحل (مفصولة بفاصلة)</label>
-                                <input type="text" id="newProjectPhases" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="الأسطح, الخزانات, الحمامات">
+                                <label for="newProjectName" class="block text-sm font-semibold text-gray-700 mb-2">اسم المرحلة</label>
+                                <input type="text" id="newProjectName" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="أدخل اسم المرحلة">
                             </div>
                         </div>
                         <button type="submit" class="btn-primary py-3 px-6 text-sm font-semibold">
@@ -258,4 +255,5 @@
     <script type="module" src="dashboard.js"></script>
 </body>
 </html>
+
 
