@@ -53,31 +53,47 @@ class DashboardManager {
         this.setupTabSwitching();
     }
 
-    // Initialize all event listeners
-    initListeners() {
-        if (this.reportForm) {
-            this.reportForm.addEventListener('submit', this.handleReportSubmit.bind(this));
-        }
-        if (this.signOutBtn) {
-            this.signOutBtn.addEventListener('click', this.handleSignOut.bind(this));
-        }
-        if (this.closeMessageBtn) {
-            this.closeMessageBtn.addEventListener('click', () => this.hideMessage());
-        }
+   // Initialize all event listeners
+initListeners() {
+    if (this.reportForm) {
+        this.reportForm.addEventListener('submit', this.handleReportSubmit.bind(this));
+    }
+    if (this.signOutBtn) {
+        this.signOutBtn.addEventListener('click', this.handleSignOut.bind(this));
+    }
+    if (this.closeMessageBtn) {
+        this.closeMessageBtn.addEventListener('click', () => this.hideMessage());
+    }
 
-        // Dynamic form listeners
-        if (this.itemTypeSelect) {
-            this.itemTypeSelect.addEventListener('change', this.handleItemTypeChange.bind(this));
-        }
-        if (this.materialNameSelect) {
-            this.materialNameSelect.addEventListener('change', this.handleMaterialNameChange.bind(this));
-        }
-        if (this.workerNameSelect) {
-            this.workerNameSelect.addEventListener('change', this.handleWorkerNameChange.bind(this));
-        }
-        if (this.contractorNameSelect) {
-            this.contractorNameSelect.addEventListener('change', this.handleContractorNameChange.bind(this));
-        }
+    // Dynamic form listeners
+    if (this.itemTypeSelect) {
+        this.itemTypeSelect.addEventListener('change', this.handleItemTypeChange.bind(this));
+    }
+    if (this.materialNameSelect) {
+        this.materialNameSelect.addEventListener('change', this.handleMaterialNameChange.bind(this));
+    }
+    if (this.workerNameSelect) {
+        this.workerNameSelect.addEventListener('change', this.handleWorkerNameChange.bind(this));
+    }
+    if (this.contractorNameSelect) {
+        this.contractorNameSelect.addEventListener('change', this.handleContractorNameChange.bind(this));
+    }
+
+    // Admin Panel listeners
+    if (this.adminPanelBtn) {
+        this.adminPanelBtn.addEventListener('click', this.handleAdminPanelClick.bind(this));
+    }
+    if (this.adminForm) {
+        this.adminForm.addEventListener('submit', this.handleAdminSubmit.bind(this));
+    }
+    if (this.addProjectForm) {
+        this.addProjectForm.addEventListener('submit', this.handleAddProject.bind(this));
+    }
+    if (this.addPhaseForm) {
+        this.addPhaseForm.addEventListener('submit', this.handleAddPhase.bind(this));
+    }
+} // ← هنا ينتهي الـ initListeners
+
 
         // Admin Panel listeners
         if (this.adminPanelBtn) {
@@ -391,3 +407,4 @@ let dashboard;
 document.addEventListener('DOMContentLoaded', () => {
     dashboard = new DashboardManager();
 });
+
