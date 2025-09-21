@@ -1,6 +1,6 @@
 // Dashboard functionality with Firebase
 import { auth, db, appId, adminUsername } from './auth.js';
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { collection, onSnapshot, addDoc, doc, getDoc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 class DashboardManager {
@@ -69,8 +69,8 @@ class DashboardManager {
         try {
             await signOut(auth);
             this.showMessage("تم تسجيل الخروج بنجاح.");
-            // Optional: Redirect to login page or update UI
-            console.log("User signed out successfully.");
+            // Redirect to login page after successful sign-out
+            window.location.href = 'index.html';
         } catch (error) {
             console.error("Error signing out:", error);
             this.showMessage("حدث خطأ أثناء تسجيل الخروج. يرجى المحاولة مرة أخرى.");
