@@ -1,7 +1,7 @@
 // Dashboard functionality with Firebase
 import { auth, db, appId, adminUsername } from './auth.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { collection, onSnapshot, addDoc, doc, getDoc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, onSnapshot, addDoc, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 class DashboardManager {
     constructor() {
@@ -11,6 +11,7 @@ class DashboardManager {
         this.materials = [];
         this.workers = [];
         this.contractors = [];
+        this.projects = [];
 
         // Element references
         this.userWelcome = document.getElementById('userWelcome');
@@ -34,10 +35,15 @@ class DashboardManager {
         this.contractorUnitInput = document.getElementById('contractorUnit');
         this.reportsHistory = document.getElementById('reportsHistory');
 
+        // Admin elements
         this.adminForm = document.getElementById('adminForm');
         this.adminItemTypeSelect = document.getElementById('adminItemType');
         this.adminItemNameInput = document.getElementById('adminItemName');
         this.adminItemUnitInput = document.getElementById('adminItemUnit');
+        this.addProjectForm = document.getElementById('addProjectForm');
+        this.projectsList = document.getElementById('projectsList');
+        this.materialsList = document.getElementById('materialsList');
+        this.workersContractorsList = document.getElementById('workersContractorsList');
 
         this.initListeners();
         this.loadInitialData();
@@ -78,6 +84,9 @@ class DashboardManager {
         if (this.adminForm) {
             this.adminForm.addEventListener('submit', this.handleAdminSubmit.bind(this));
         }
+        if (this.addProjectForm) {
+            this.addProjectForm.addEventListener('submit', this.handleAddProject.bind(this));
+        }
     }
 
     // New method to handle tab switching
@@ -89,6 +98,14 @@ class DashboardManager {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const targetTab = e.target.getAttribute('data-tab');
+
+                // Remove active class from all nav links
+                navLinks.forEach(navLink => {
+                    navLink.classList.remove('active');
+                });
+
+                // Add active class to clicked nav link
+                e.target.classList.add('active');
 
                 // Hide all tab contents
                 tabContents.forEach(tab => {
@@ -108,8 +125,12 @@ class DashboardManager {
         try {
             await signOut(auth);
             this.showMessage("تم تسجيل الخروج بنجاح.");
+            // Clear session data
+            localStorage.removeItem('exo_session');
             // Redirect to login page after successful sign-out
-            window.location.href = 'index.html';
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1500);
         } catch (error) {
             console.error("Error signing out:", error);
             this.showMessage("حدث خطأ أثناء تسجيل الخروج. يرجى المحاولة مرة أخرى.");
@@ -137,6 +158,7 @@ class DashboardManager {
                 console.log("User is authenticated:", this.userId);
 
                 // Fetch data after successful authentication
+                this.fetchProjects();
                 this.fetchMaterials();
                 this.fetchWorkers();
                 this.fetchContractors();
@@ -145,6 +167,7 @@ class DashboardManager {
 
             } else {
                 console.log("No user is authenticated. Redirecting to login page.");
+                window.location.href = 'index.html';
             }
         });
     }
@@ -184,24 +207,28 @@ class DashboardManager {
                 if (report.itemType === 'مواد') {
                     reportDetails += `
                         <p class="mb-1"><span class="font-semibold text-gray-700">اسم المادة:</span> ${report.materialName}</p>
-                        <p class="mb-1"><span class="font-semibold text-gray-700">الكمية:</span> ${report.materialQuantity}</p>
+                        <p class="mb-1"><span class="font-semibold text-gray-700">الكمية:</span> ${report.quantity}</p>
                         <p class="mb-1"><span class="font-semibold text-gray-700">الوحدة:</span> ${report.materialUnit}</p>
                     `;
                 } else if (report.itemType === 'عمالة') {
                     reportDetails += `
                         <p class="mb-1"><span class="font-semibold text-gray-700">اسم العامل:</span> ${report.workerName}</p>
-                        <p class="mb-1"><span class="font-semibold text-gray-700">الكمية:</span> ${report.workerQuantity}</p>
+                        <p class="mb-1"><span class="font-semibold text-gray-700">الكمية:</span> ${report.quantity}</p>
                         <p class="mb-1"><span class="font-semibold text-gray-700">الوحدة:</span> ${report.workerUnit}</p>
                     `;
                 } else if (report.itemType === 'مقاول') {
                     reportDetails += `
                         <p class="mb-1"><span class="font-semibold text-gray-700">اسم المقاول:</span> ${report.contractorName}</p>
-                        <p class="mb-1"><span class="font-semibold text-gray-700">الكمية:</span> ${report.contractorQuantity}</p>
+                        <p class="mb-1"><span class="font-semibold text-gray-700">الكمية:</span> ${report.quantity}</p>
                         <p class="mb-1"><span class="font-semibold text-gray-700">الوحدة:</span> ${report.contractorUnit}</p>
                     `;
                 }
                 
-                reportDetails += `<p class="mt-2 text-sm text-gray-500">ملاحظات: ${report.notes || 'لا توجد'}</p>`;
+                reportDetails += `
+                    <p class="mb-1"><span class="font-semibold text-gray-700">التكلفة الفردية:</span> ${report.costPerUnit} ريال</p>
+                    <p class="mb-1"><span class="font-semibold text-gray-700">المجموع:</span> ${(report.costPerUnit * report.quantity).toFixed(2)} ريال</p>
+                    <p class="mt-2 text-sm text-gray-500">الوصف: ${report.itemDescription || 'لا يوجد'}</p>
+                `;
 
                 reportElement.innerHTML = reportDetails;
                 this.reportsHistory.appendChild(reportElement);
@@ -223,34 +250,77 @@ class DashboardManager {
 
     // Loads static initial data
     loadInitialData() {
-        const projects = [
-            { name: "مشروع 1", phases: ["الأسطح", "الخزانات"] },
-            { name: "مشروع 2", phases: ["الحمامات", "الواجهات"] },
-            { name: "مشروع 3", phases: ["الشبكات", "الدهانات"] }
-        ];
+        // Set default date to today
+        const reportDateInput = document.getElementById('reportDate');
+        if (reportDateInput) {
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            reportDateInput.value = formattedDate;
+        }
+    }
 
-        const projectNameSelect = document.getElementById('projectName');
-        if (projectNameSelect) {
-            projects.forEach(project => {
-                const option = document.createElement('option');
-                option.value = project.name;
-                option.textContent = project.name;
-                projectNameSelect.appendChild(option);
-            });
-            projectNameSelect.addEventListener('change', () => {
-                const projectPhaseSelect = document.getElementById('projectPhase');
-                projectPhaseSelect.innerHTML = '<option value="" disabled selected>اختر المرحلة</option>';
-                const selectedProject = projects.find(p => p.name === projectNameSelect.value);
-                if (selectedProject) {
-                    selectedProject.phases.forEach(phase => {
-                        const option = document.createElement('option');
-                        option.value = phase;
-                        option.textContent = phase;
-                        projectPhaseSelect.appendChild(option);
-                    });
+    // Fetch projects from Firestore
+    fetchProjects() {
+        const projectsCollectionRef = collection(db, `artifacts/${appId}/public/data/projects`);
+        onSnapshot(projectsCollectionRef, (snapshot) => {
+            this.projects = [];
+            const projectNameSelect = document.getElementById('projectName');
+            if (projectNameSelect) {
+                projectNameSelect.innerHTML = '<option value="" disabled selected>اختر المشروع</option>';
+            }
+
+            // Update admin projects list
+            if (this.projectsList) {
+                this.projectsList.innerHTML = '';
+            }
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                this.projects.push({ id: doc.id, ...data });
+                
+                if (projectNameSelect) {
+                    const option = document.createElement('option');
+                    option.value = data.name;
+                    option.textContent = data.name;
+                    projectNameSelect.appendChild(option);
+                }
+
+                // Add to admin list
+                if (this.projectsList && this.userRole === 'admin') {
+                    const projectItem = document.createElement('div');
+                    projectItem.classList.add('admin-panel-item', 'p-2', 'mb-2');
+                    projectItem.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium">${data.name}</span>
+                            <button onclick="dashboard.deleteProject('${doc.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">${data.phases.join(', ')}</div>
+                    `;
+                    this.projectsList.appendChild(projectItem);
                 }
             });
-        }
+
+            // Set up project phase handler
+            if (projectNameSelect) {
+                projectNameSelect.addEventListener('change', () => {
+                    const projectPhaseSelect = document.getElementById('projectPhase');
+                    projectPhaseSelect.innerHTML = '<option value="" disabled selected>اختر المرحلة</option>';
+                    const selectedProject = this.projects.find(p => p.name === projectNameSelect.value);
+                    if (selectedProject && selectedProject.phases) {
+                        selectedProject.phases.forEach(phase => {
+                            const option = document.createElement('option');
+                            option.value = phase;
+                            option.textContent = phase;
+                            projectPhaseSelect.appendChild(option);
+                        });
+                    }
+                });
+            }
+
+            if (this.projectsList && this.projects.length === 0) {
+                this.projectsList.innerHTML = '<p class="text-sm text-gray-500">لا توجد مشاريع</p>';
+            }
+        });
     }
 
     // Dynamic form logic
@@ -291,16 +361,41 @@ class DashboardManager {
             if (this.materialNameSelect) {
                 this.materialNameSelect.innerHTML = '<option value="" disabled selected>اختر المادة</option>';
             }
+
+            // Update admin materials list
+            if (this.materialsList) {
+                this.materialsList.innerHTML = '';
+            }
+
             snapshot.forEach(doc => {
                 const data = doc.data();
                 this.materials.push({ id: doc.id, ...data });
+                
                 if (this.materialNameSelect) {
                     const option = document.createElement('option');
                     option.value = data.name;
                     option.textContent = `${data.name} (${data.unit})`;
                     this.materialNameSelect.appendChild(option);
                 }
+
+                // Add to admin list
+                if (this.materialsList && this.userRole === 'admin') {
+                    const materialItem = document.createElement('div');
+                    materialItem.classList.add('admin-panel-item', 'p-2', 'mb-2');
+                    materialItem.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium">${data.name}</span>
+                            <button onclick="dashboard.deleteMaterial('${doc.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                        </div>
+                        <div class="text-xs text-gray-500">${data.unit}</div>
+                    `;
+                    this.materialsList.appendChild(materialItem);
+                }
             });
+
+            if (this.materialsList && this.materials.length === 0) {
+                this.materialsList.innerHTML = '<p class="text-sm text-gray-500">لا توجد مواد</p>';
+            }
         });
     }
 
@@ -321,6 +416,7 @@ class DashboardManager {
                     this.workerNameSelect.appendChild(option);
                 }
             });
+            this.updateWorkersContractorsList();
         });
     }
 
@@ -341,7 +437,46 @@ class DashboardManager {
                     this.contractorNameSelect.appendChild(option);
                 }
             });
+            this.updateWorkersContractorsList();
         });
+    }
+
+    updateWorkersContractorsList() {
+        if (!this.workersContractorsList || this.userRole !== 'admin') return;
+
+        this.workersContractorsList.innerHTML = '';
+        
+        // Add workers
+        this.workers.forEach(worker => {
+            const workerItem = document.createElement('div');
+            workerItem.classList.add('admin-panel-item', 'p-2', 'mb-2');
+            workerItem.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="font-medium">${worker.name}</span>
+                    <button onclick="dashboard.deleteWorker('${worker.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                </div>
+                <div class="text-xs text-gray-500">عامل - ${worker.unit}</div>
+            `;
+            this.workersContractorsList.appendChild(workerItem);
+        });
+
+        // Add contractors
+        this.contractors.forEach(contractor => {
+            const contractorItem = document.createElement('div');
+            contractorItem.classList.add('admin-panel-item', 'p-2', 'mb-2');
+            contractorItem.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <span class="font-medium">${contractor.name}</span>
+                    <button onclick="dashboard.deleteContractor('${contractor.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                </div>
+                <div class="text-xs text-gray-500">مقاول - ${contractor.unit}</div>
+            `;
+            this.workersContractorsList.appendChild(contractorItem);
+        });
+
+        if (this.workers.length === 0 && this.contractors.length === 0) {
+            this.workersContractorsList.innerHTML = '<p class="text-sm text-gray-500">لا توجد عمالة أو مقاولين</p>';
+        }
     }
 
     // Form submission
@@ -366,6 +501,14 @@ class DashboardManager {
             this.materialsSection.classList.add('hidden');
             this.workersSection.classList.add('hidden');
             this.contractorsSection.classList.add('hidden');
+
+            // Reset date to today
+            const reportDateInput = document.getElementById('reportDate');
+            if (reportDateInput) {
+                const today = new Date();
+                const formattedDate = today.toISOString().split('T')[0];
+                reportDateInput.value = formattedDate;
+            }
         } catch (error) {
             console.error("Error adding document: ", error);
             this.showMessage("حدث خطأ أثناء إرسال التقرير. يرجى المحاولة مرة أخرى.");
@@ -394,10 +537,16 @@ class DashboardManager {
     }
 
     handleAdminPanelClick() {
+        // Remove active class from all nav links
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+
         // Hide all user tabs
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.classList.add('hidden');
         });
+        
         // Show the admin panel tab
         const adminTab = document.getElementById('adminPanelTab');
         if (adminTab) {
@@ -405,11 +554,43 @@ class DashboardManager {
         }
     }
 
+    async handleAddProject(event) {
+        event.preventDefault();
+        const projectName = document.getElementById('newProjectName').value.trim();
+        const projectPhasesStr = document.getElementById('newProjectPhases').value.trim();
+
+        if (!projectName || !projectPhasesStr) {
+            this.showMessage("يرجى ملء جميع الحقول.");
+            return;
+        }
+
+        const phases = projectPhasesStr.split(',').map(phase => phase.trim()).filter(phase => phase);
+
+        if (phases.length === 0) {
+            this.showMessage("يرجى إدخال مرحلة واحدة على الأقل.");
+            return;
+        }
+
+        try {
+            const projectsCollection = collection(db, `artifacts/${appId}/public/data/projects`);
+            await addDoc(projectsCollection, {
+                name: projectName,
+                phases: phases,
+                createdAt: new Date()
+            });
+            this.showMessage(`تمت إضافة المشروع "${projectName}" بنجاح!`);
+            this.addProjectForm.reset();
+        } catch (error) {
+            console.error("Error adding project:", error);
+            this.showMessage("حدث خطأ أثناء إضافة المشروع. يرجى المحاولة مرة أخرى.");
+        }
+    }
+
     async handleAdminSubmit(event) {
         event.preventDefault();
         const itemType = this.adminItemTypeSelect.value;
-        const itemName = this.adminItemNameInput.value;
-        const itemUnit = this.adminItemUnitInput.value;
+        const itemName = this.adminItemNameInput.value.trim();
+        const itemUnit = this.adminItemUnitInput.value.trim();
 
         if (!itemType || !itemName || !itemUnit) {
             this.showMessage("يرجى ملء جميع الحقول.");
@@ -436,7 +617,8 @@ class DashboardManager {
             const collectionRef = collection(db, `artifacts/${appId}/public/data/${collectionName}`);
             await addDoc(collectionRef, {
                 name: itemName,
-                unit: itemUnit
+                unit: itemUnit,
+                createdAt: new Date()
             });
             this.showMessage(`تمت إضافة ${itemName} بنجاح إلى قاعدة البيانات!`);
             this.adminForm.reset();
@@ -445,8 +627,60 @@ class DashboardManager {
             this.showMessage("حدث خطأ أثناء إضافة البند. يرجى المحاولة مرة أخرى.");
         }
     }
+
+    // Delete functions for admin
+    async deleteProject(projectId) {
+        if (confirm('هل أنت متأكد من حذف هذا المشروع؟')) {
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/public/data/projects`, projectId));
+                this.showMessage("تم حذف المشروع بنجاح!");
+            } catch (error) {
+                console.error("Error deleting project:", error);
+                this.showMessage("حدث خطأ أثناء حذف المشروع.");
+            }
+        }
+    }
+
+    async deleteMaterial(materialId) {
+        if (confirm('هل أنت متأكد من حذف هذه المادة؟')) {
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/public/data/materials`, materialId));
+                this.showMessage("تم حذف المادة بنجاح!");
+            } catch (error) {
+                console.error("Error deleting material:", error);
+                this.showMessage("حدث خطأ أثناء حذف المادة.");
+            }
+        }
+    }
+
+    async deleteWorker(workerId) {
+        if (confirm('هل أنت متأكد من حذف هذا العامل؟')) {
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/public/data/workers`, workerId));
+                this.showMessage("تم حذف العامل بنجاح!");
+            } catch (error) {
+                console.error("Error deleting worker:", error);
+                this.showMessage("حدث خطأ أثناء حذف العامل.");
+            }
+        }
+    }
+
+    async deleteContractor(contractorId) {
+        if (confirm('هل أنت متأكد من حذف هذا المقاول؟')) {
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/public/data/contractors`, contractorId));
+                this.showMessage("تم حذف المقاول بنجاح!");
+            } catch (error) {
+                console.error("Error deleting contractor:", error);
+                this.showMessage("حدث خطأ أثناء حذف المقاول.");
+            }
+        }
+    }
 }
 
+// Create global dashboard instance for delete functions
+let dashboard;
+
 document.addEventListener('DOMContentLoaded', () => {
-    new DashboardManager();
+    dashboard = new DashboardManager();
 });
