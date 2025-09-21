@@ -34,15 +34,13 @@ class DashboardManager {
         this.contractorNameSelect = document.getElementById('contractorName');
         this.contractorUnitInput = document.getElementById('contractorUnit');
         this.reportsHistory = document.getElementById('reportsHistory');
-        
+
         // Admin elements
         this.adminForm = document.getElementById('adminForm');
         this.adminItemTypeSelect = document.getElementById('adminItemType');
         this.adminItemNameInput = document.getElementById('adminItemName');
         this.adminItemUnitInput = document.getElementById('adminItemUnit');
         this.addProjectForm = document.getElementById('addProjectForm');
-        this.addPhaseForm = document.getElementById('addPhaseForm');
-        this.phaseProjectSelect = document.getElementById('phaseProjectSelect');
         this.projectsList = document.getElementById('projectsList');
         this.materialsList = document.getElementById('materialsList');
         this.workersContractorsList = document.getElementById('workersContractorsList');
@@ -90,10 +88,6 @@ class DashboardManager {
             this.addProjectForm.addEventListener('submit', this.handleAddProject.bind(this));
         }
     }
-        if (this.addPhaseForm) {
-        this.addPhaseForm.addEventListener('submit', this.handleAddPhase.bind(this));
-    }
-
 
     // New method to handle tab switching
     setupTabSwitching() {
@@ -271,16 +265,9 @@ class DashboardManager {
         onSnapshot(projectsCollectionRef, (snapshot) => {
             this.projects = [];
             const projectNameSelect = document.getElementById('projectName');
-           if (this.phaseProjectSelect) {
-    this.phaseProjectSelect.innerHTML = '<option value="" disabled selected>اختر المشروع</option>';
-}
-...
-if (this.phaseProjectSelect) {
-    const option = document.createElement('option');
-    option.value = doc.id; // نخزن الـ id عشان نقدر نعدل في المشروع
-    option.textContent = data.name;
-    this.phaseProjectSelect.appendChild(option);
-}
+            if (projectNameSelect) {
+                projectNameSelect.innerHTML = '<option value="" disabled selected>اختر المشروع</option>';
+            }
 
             // Update admin projects list
             if (this.projectsList) {
@@ -689,45 +676,7 @@ if (this.phaseProjectSelect) {
             }
         }
     }
-    async handleAddPhase(event) {
-    event.preventDefault();
-    const projectId = this.phaseProjectSelect.value;
-    const newPhase = document.getElementById('newPhaseName').value.trim();
-
-    if (!projectId || !newPhase) {
-        this.showMessage("يرجى اختيار المشروع وإدخال اسم المرحلة.");
-        return;
-    }
-
-    try {
-        const projectRef = doc(db, `artifacts/${appId}/public/data/projects`, projectId);
-        const projectSnap = await getDoc(projectRef);
-
-        if (projectSnap.exists()) {
-            const projectData = projectSnap.data();
-            const phases = projectData.phases || [];
-
-            if (phases.includes(newPhase)) {
-                this.showMessage("هذه المرحلة موجودة بالفعل.");
-                return;
-            }
-
-            phases.push(newPhase);
-
-            await updateDoc(projectRef, { phases });
-            this.showMessage(`تمت إضافة المرحلة "${newPhase}" بنجاح!`);
-            this.addPhaseForm.reset();
-        } else {
-            this.showMessage("المشروع غير موجود.");
-        }
-    } catch (error) {
-        console.error("Error adding phase:", error);
-        this.showMessage("حدث خطأ أثناء إضافة المرحلة. يرجى المحاولة مرة أخرى.");
-    }
 }
-
-}
-
 
 // Create global dashboard instance for delete functions
 let dashboard;
