@@ -1,130 +1,4 @@
-    async handleAddPhase(event) {
-        event.preventDefault();
-        const projectId = document.getElementById('existingProject').value;
-        const newPhase = document.getElementById('newPhase').value.trim();
-
-        if (!projectId || !newPhase) {
-            this.showMessage("يرجى اختيار المشروع وإدخال اسم المرحلة.");
-            return;
-        }
-
-        try {
-            // Get current project data
-            const projectRef = doc(db, `artifacts/${appId}/public/data/projects`, projectId);
-            const projectSnap = await getDoc(projectRef);
-            
-            if (!projectSnap.exists()) {
-                this.showMessage("المشروع المحدد غير موجود.");
-                return;
-            }
-
-            const projectData = projectSnap.data();
-            const currentPhases = projectData.phases || [];
-
-            // Check if phase already exists
-            if (currentPhases.includes(newPhase)) {
-                this.showMessage("هذه المرحلة موجودة بالفعل في المشروع.");
-                return;
-            }
-
-            // Add new phase
-            const updatedPhases = [...currentPhases, newPhase];
-            
-            await updateDoc(projectRef, {
-                phases: updatedPhases,
-                updatedAt: new Date()
-            });
-
-            this.showMessage(`تمت إضافة المرحلة "${newPhase}" بنجاح إلى المشروع!`);
-            this.addPhaseForm.reset();
-        } catch (error) {
-            console.error("Error adding phase:", error);
-            this.showMessage("حدث خطأ أثناء إضافة المرحلة. يرجى المحاولة مرة أخرى.");
-        }
-    }
-
-    // Edit modal functions
-    showEditModal(type, id, name, unitOrPhases) {
-        this.currentEditItem = { type, id, name, unitOrPhases };
-        this.editItemName.value = name;
-        
-        if (type === 'project') {
-            this.editUnitDiv.classList.add('hidden');
-            this.editPhasesDiv.classList.remove('hidden');
-            this.editProjectPhases.value = unitOrPhases;
-        } else {
-            this.editUnitDiv.classList.remove('hidden');
-            this.editPhasesDiv.classList.add('hidden');
-            this.editItemUnit.value = unitOrPhases;
-        }
-        
-        this.editModal.classList.remove('hidden');
-        this.editModal.classList.add('flex');
-    }
-
-    hideEditModal() {
-        this.editModal.classList.add('hidden');
-        this.editModal.classList.remove('flex');
-        this.currentEditItem = null;
-    }
-
-    async handleEditSubmit(event) {
-        event.preventDefault();
-        
-        if (!this.currentEditItem) return;
-
-        const { type, id } = this.currentEditItem;
-        const newName = this.editItemName.value.trim();
-        
-        if (!newName) {
-            this.showMessage("يرجى إدخال اسم صالح.");
-            return;
-        }
-
-        try {
-            let updateData = {
-                name: newName,
-                updatedAt: new Date()
-            };
-
-            if (type === 'project') {
-                const phasesStr = this.editProjectPhases.value.trim();
-                if (!phasesStr) {
-                    this.showMessage("يرجى إدخال مرحلة واحدة على الأقل.");
-                    return;
-                }
-                const phases = phasesStr.split(',').map(phase => phase.trim()).filter(phase => phase);
-                updateData.phases = phases;
-            } else {
-                const newUnit = this.editItemUnit.value.trim();
-                if (!newUnit) {
-                    this.showMessage("يرجى إدخال وحدة صالحة.");
-                    return;
-                }
-                updateData.unit = newUnit;
-            }
-
-            let collectionName;
-            switch (type) {
-                case 'project':
-                    collectionName = 'projects';
-                    break;
-                case 'material':
-                    collectionName = 'materials';
-                    break;
-                case 'worker':
-                    collectionName = 'workers';
-                    break;
-                case 'contractor':
-                    collectionName = 'contractors';
-                    break;
-                default:
-                    this.showMessage("نوع العنصر غير صالح.");
-                    return;
-            }
-
-            const itemRef = doc(db, `artifacts/${appId}/public/data/${collectionName}`, id);
-            // Dashboard functionality with Firebase
+// Dashboard functionality with Firebase
 import { auth, db, appId, adminUsername } from './auth.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { collection, onSnapshot, addDoc, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -622,10 +496,7 @@ class DashboardManager {
             workerItem.innerHTML = `
                 <div class="flex justify-between items-center">
                     <span class="font-medium">${worker.name}</span>
-                    <div class="flex space-x-1 space-x-reverse">
-                        <button onclick="dashboard.editWorker('${worker.id}', '${worker.name}', '${worker.unit}')" class="text-blue-500 text-xs hover:text-blue-700">تعديل</button>
-                        <button onclick="dashboard.deleteWorker('${worker.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
-                    </div>
+                    <button onclick="dashboard.deleteWorker('${worker.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
                 </div>
                 <div class="text-xs text-gray-500">عامل - ${worker.unit}</div>
             `;
@@ -639,10 +510,7 @@ class DashboardManager {
             contractorItem.innerHTML = `
                 <div class="flex justify-between items-center">
                     <span class="font-medium">${contractor.name}</span>
-                    <div class="flex space-x-1 space-x-reverse">
-                        <button onclick="dashboard.editContractor('${contractor.id}', '${contractor.name}', '${contractor.unit}')" class="text-blue-500 text-xs hover:text-blue-700">تعديل</button>
-                        <button onclick="dashboard.deleteContractor('${contractor.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
-                    </div>
+                    <button onclick="dashboard.deleteContractor('${contractor.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
                 </div>
                 <div class="text-xs text-gray-500">مقاول - ${contractor.unit}</div>
             `;
