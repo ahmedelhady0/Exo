@@ -45,7 +45,10 @@ class DashboardManager {
         this.checkAuth();
         
         // Event listeners
-        this.signOutBtn.addEventListener('click', () => this.signOut());
+            this.signOutBtn.addEventListener('click', () => {
+                console.log('Logout button clicked');
+                this.signOut();
+            });
         this.closeMessageBtn.addEventListener('click', () => this.closeMessage());
         
         // Navigation
@@ -167,7 +170,9 @@ class DashboardManager {
     
     async signOut() {
         try {
+            console.log('Attempting to sign out...');
             await signOut(auth);
+            console.log('Sign out successful');
             localStorage.removeItem('exo_session');
             this.showMessage('تم تسجيل الخروج بنجاح');
             setTimeout(() => {
