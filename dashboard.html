@@ -1,279 +1,200 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم - نظام تسجيل يوميات EXO</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم - نظام تسجيل يوميات EXO</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="p-4 md:p-8 min-h-screen">
-    <div class="container floating-animation p-8 w-full max-w-4xl mx-auto fade-in">
-        <header class="mb-8">
-            <h1 class="text-3xl title-gradient text-center mb-4">نظام تسجيل يوميات شركة اكسو</h1>
-            <div class="flex justify-between items-center glass-effect p-4 rounded-lg">
-                <div class="flex items-center">
-                    <span id="userWelcome" class="status-badge">مرحباً</span>
-                </div>
-                <div class="flex space-x-3 space-x-reverse">
-                    <button type="button" id="adminPanelBtn" class="btn-gray py-3 px-6 text-sm font-semibold hidden">
-                        لوحة المدير
-                    </button>
-                    <button type="button" id="signOutBtn" class="btn-danger py-3 px-6 text-sm font-semibold">
-                        تسجيل الخروج
-                    </button>
-                </div>
-            </div>
-        </header>
+<body class="bg-gray-50">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex justify-between items-center shadow-md">
+      <h1 class="text-xl font-bold">نظام تسجيل يوميات EXO</h1>
+      <div class="flex items-center space-x-4 space-x-reverse">
+        <span id="userWelcome" class="font-medium">مرحباً</span>
+        <button id="adminPanelBtn" class="btn-secondary">لوحة المدير</button>
+        <button id="signOutBtn" class="btn-danger">تسجيل الخروج</button>
+      </div>
+    </header>
 
-        <nav class="navigation-menu mb-6">
-            <a href="#" class="nav-link active" data-tab="reports">إنشاء تقرير</a>
-            <a href="#" class="nav-link" data-tab="history">سجل التقارير</a>
+    <!-- Main content -->
+    <main class="flex-1 container mx-auto p-4 md:p-6">
+      <div class="tabs">
+        <!-- Navigation Tabs -->
+        <nav class="flex space-x-2 space-x-reverse border-b border-gray-200 mb-4">
+          <a href="#" class="nav-link active" data-tab="report">تسجيل تقرير</a>
+          <a href="#" class="nav-link" data-tab="history">السجل</a>
+          <a href="#" class="nav-link" data-tab="admin">الإدارة</a>
         </nav>
 
-        <!-- Reports Tab -->
-        <div id="reportsTab" class="tab-content">
-            <div class="section-card p-6 mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">إرسال تقرير جديد</h2>
-                <form id="reportForm" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="employeeName" class="block text-sm font-semibold text-gray-700 mb-2">اسم الموظف</label>
-                            <input type="text" id="employeeName" name="employeeName" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="أدخل اسمك">
-                        </div>
-                        <div>
-                            <label for="reportDate" class="block text-sm font-semibold text-gray-700 mb-2">التاريخ</label>
-                            <input type="date" id="reportDate" name="reportDate" required class="input-field mt-1 block w-full shadow-sm p-3">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="projectName" class="block text-sm font-semibold text-gray-700 mb-2">اسم المشروع</label>
-                            <select id="projectName" name="projectName" required class="input-field mt-1 block w-full shadow-sm p-3">
-                                <option value="" disabled selected>اختر المشروع</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="projectPhase" class="block text-sm font-semibold text-gray-700 mb-2">مرحلة المشروع</label>
-                            <select id="projectPhase" name="projectPhase" required class="input-field mt-1 block w-full shadow-sm p-3">
-                                <option value="" disabled selected>اختر المرحلة</option>
-                                <option value="الأسطح">الأسطح</option>
-                                <option value="الخزانات">الخزانات</option>
-                                <option value="الحمامات">الحمامات</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="itemType" class="block text-sm font-semibold text-gray-700 mb-2">نوع البند</label>
-                        <select id="itemType" name="itemType" required class="input-field mt-1 block w-full shadow-sm p-3">
-                            <option value="" disabled selected>اختر النوع</option>
-                            <option value="عمالة">عمالة</option>
-                            <option value="مواد">مواد</option>
-                            <option value="مقاول">مقاول</option>
-                        </select>
-                    </div>
-
-                    <!-- Materials section -->
-                    <div id="materialsSection" class="hidden glass-effect p-4 rounded-lg space-y-4">
-                        <div>
-                            <label for="materialName" class="block text-sm font-semibold text-gray-700 mb-2">اسم المادة</label>
-                            <select id="materialName" name="materialName" class="input-field mt-1 block w-full shadow-sm p-3">
-                                <option value="" disabled selected>اختر المادة</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="materialUnit" class="block text-sm font-semibold text-gray-700 mb-2">وحدة المادة</label>
-                            <input type="text" id="materialUnit" name="materialUnit" readonly class="input-field mt-1 block w-full shadow-sm bg-gray-100 p-3 text-gray-500" placeholder="الوحدة تظهر هنا تلقائياً">
-                        </div>
-                    </div>
-
-                    <!-- Workers section -->
-                    <div id="workersSection" class="hidden glass-effect p-4 rounded-lg space-y-4">
-                        <div>
-                            <label for="workerName" class="block text-sm font-semibold text-gray-700 mb-2">اسم العامل</label>
-                            <select id="workerName" name="workerName" class="input-field mt-1 block w-full shadow-sm p-3">
-                                <option value="" disabled selected>اختر العامل</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="workerUnit" class="block text-sm font-semibold text-gray-700 mb-2">وحدة العامل</label>
-                            <input type="text" id="workerUnit" name="workerUnit" readonly class="input-field mt-1 block w-full shadow-sm bg-gray-100 p-3 text-gray-500" placeholder="الوحدة تظهر هنا تلقائياً">
-                        </div>
-                    </div>
-
-                    <!-- Contractors section -->
-                    <div id="contractorsSection" class="hidden glass-effect p-4 rounded-lg space-y-4">
-                        <div>
-                            <label for="contractorName" class="block text-sm font-semibold text-gray-700 mb-2">اسم المقاول</label>
-                            <select id="contractorName" name="contractorName" class="input-field mt-1 block w-full shadow-sm p-3">
-                                <option value="" disabled selected>اختر المقاول</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="contractorUnit" class="block text-sm font-semibold text-gray-700 mb-2">وحدة المقاول</label>
-                            <input type="text" id="contractorUnit" name="contractorUnit" readonly class="input-field mt-1 block w-full shadow-sm bg-gray-100 p-3 text-gray-500" placeholder="الوحدة تظهر هنا تلقائياً">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="itemDescription" class="block text-sm font-semibold text-gray-700 mb-2">وصف البند</label>
-                        <textarea id="itemDescription" name="itemDescription" rows="4" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="مثال: يومية 5 عمال، أو: 10 أكياس أسمنت"></textarea>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="costPerUnit" class="block text-sm font-semibold text-gray-700 mb-2">التكلفة الفردية</label>
-                            <input type="number" id="costPerUnit" name="costPerUnit" step="0.01" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="مثال: 250">
-                        </div>
-                        <div>
-                            <label for="quantity" class="block text-sm font-semibold text-gray-700 mb-2">الكمية</label>
-                            <input type="number" id="quantity" name="quantity" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="مثال: 5">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-primary w-full py-4 px-6 text-lg font-bold">
-                        إرسال التقرير
-                    </button>
-                </form>
+        <!-- Report Tab -->
+        <section id="reportTab" class="tab-content">
+          <form id="reportForm" class="section-card p-6 space-y-4">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">تسجيل تقرير جديد</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="reportDate" class="block text-sm font-semibold text-gray-700 mb-2">التاريخ</label>
+                <input type="date" id="reportDate" required class="input-field w-full">
+              </div>
+              <div>
+                <label for="projectName" class="block text-sm font-semibold text-gray-700 mb-2">المشروع</label>
+                <select id="projectName" required class="input-field w-full">
+                  <option value="" disabled selected>اختر المشروع</option>
+                </select>
+              </div>
+              <div>
+                <label for="projectPhase" class="block text-sm font-semibold text-gray-700 mb-2">المرحلة</label>
+                <select id="projectPhase" required class="input-field w-full">
+                  <option value="" disabled selected>اختر المرحلة</option>
+                </select>
+              </div>
+              <div>
+                <label for="itemType" class="block text-sm font-semibold text-gray-700 mb-2">نوع البند</label>
+                <select id="itemType" required class="input-field w-full">
+                  <option value="" disabled selected>اختر نوع البند</option>
+                  <option value="مواد">مواد</option>
+                  <option value="عمالة">عمالة</option>
+                  <option value="مقاول">مقاول</option>
+                </select>
+              </div>
             </div>
 
-            <!-- Section to display report for printing -->
-            <div id="printSection" class="hidden section-card p-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">التقرير المرسل</h2>
-                <div id="reportContent" class="bg-gray-100 rounded-lg p-4 mb-4"></div>
-                <button onclick="window.print()" class="btn-secondary w-full py-4 px-6 text-lg font-bold">
-                    طباعة التقرير
-                </button>
+            <!-- Sections for each item type -->
+            <div id="materialsSection" class="hidden">
+              <label for="materialName" class="block text-sm font-semibold text-gray-700 mb-2">اسم المادة</label>
+              <select id="materialName" class="input-field w-full">
+                <option value="" disabled selected>اختر المادة</option>
+              </select>
+              <label for="materialUnit" class="block text-sm font-semibold text-gray-700 mt-4 mb-2">الوحدة</label>
+              <input type="text" id="materialUnit" class="input-field w-full" readonly>
             </div>
-        </div>
+
+            <div id="workersSection" class="hidden">
+              <label for="workerName" class="block text-sm font-semibold text-gray-700 mb-2">اسم العامل</label>
+              <select id="workerName" class="input-field w-full">
+                <option value="" disabled selected>اختر العامل</option>
+              </select>
+              <label for="workerUnit" class="block text-sm font-semibold text-gray-700 mt-4 mb-2">الوحدة</label>
+              <input type="text" id="workerUnit" class="input-field w-full" readonly>
+            </div>
+
+            <div id="contractorsSection" class="hidden">
+              <label for="contractorName" class="block text-sm font-semibold text-gray-700 mb-2">اسم المقاول</label>
+              <select id="contractorName" class="input-field w-full">
+                <option value="" disabled selected>اختر المقاول</option>
+              </select>
+              <label for="contractorUnit" class="block text-sm font-semibold text-gray-700 mt-4 mb-2">الوحدة</label>
+              <input type="text" id="contractorUnit" class="input-field w-full" readonly>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label for="quantity" class="block text-sm font-semibold text-gray-700 mb-2">الكمية</label>
+                <input type="number" id="quantity" required class="input-field w-full">
+              </div>
+              <div>
+                <label for="costPerUnit" class="block text-sm font-semibold text-gray-700 mb-2">التكلفة الفردية (ريال)</label>
+                <input type="number" id="costPerUnit" required class="input-field w-full">
+              </div>
+            </div>
+
+            <div>
+              <label for="itemDescription" class="block text-sm font-semibold text-gray-700 mb-2">الوصف (اختياري)</label>
+              <textarea id="itemDescription" class="input-field w-full"></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary w-full py-3">إرسال التقرير</button>
+          </form>
+        </section>
 
         <!-- History Tab -->
-        <div id="historyTab" class="tab-content hidden">
-            <div class="section-card p-6">
-                <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">سجل التقارير</h2>
-                <div id="reportsHistory">
-                    <p class="text-center text-gray-500">جاري تحميل سجل التقارير...</p>
-                </div>
-            </div>
-        </div>
+        <section id="historyTab" class="tab-content hidden">
+          <h2 class="text-lg font-bold text-gray-800 mb-4">سجل التقارير السابقة</h2>
+          <div id="reportsHistory"></div>
+        </section>
 
-        <!-- Admin Panel Tab -->
-        <div id="adminPanelTab" class="tab-content hidden">
-            <div class="section-card p-6 mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">لوحة تحكم المدير</h2>
-                
-                <!-- Add New Project Section -->
-                <div class="glass-effect p-6 rounded-lg mb-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">إضافة مشروع جديد</h3>
-                    <form id="addProjectForm" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="newProjectName" class="block text-sm font-semibold text-gray-700 mb-2">اسم المشروع</label>
-                                <input type="text" id="newProjectName" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="أدخل اسم المشروع">
-                            </div>
-                            <div>
-                                <label for="newProjectPhases" class="block text-sm font-semibold text-gray-700 mb-2">المراحل (مفصولة بفاصلة)</label>
-                                <input type="text" id="newProjectPhases" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="الأسطح, الخزانات, الحمامات">
-                            </div>
-                        </div>
-                        <button type="submit" class="btn-primary py-3 px-6 text-sm font-semibold">
-                            إضافة المشروع
-                        </button>
-                    </form>
+        <!-- Admin Tab -->
+        <section id="adminTab" class="tab-content hidden">
+          <div class="space-y-6">
+            <!-- Add Project -->
+            <div class="glass-effect p-6 rounded-lg">
+              <h3 class="text-xl font-bold text-gray-800 mb-4">إضافة مشروع جديد</h3>
+              <form id="addProjectForm" class="space-y-4">
+                <div>
+                  <label for="projectNameInput" class="block text-sm font-semibold text-gray-700 mb-2">اسم المشروع</label>
+                  <input type="text" id="projectNameInput" required class="input-field w-full">
                 </div>
-                <!-- Add New Phase Section -->
-<div class="glass-effect p-6 rounded-lg mb-6">
-    <h3 class="text-xl font-bold text-gray-800 mb-4">إضافة مرحلة جديدة لمشروع</h3>
-    <form id="addPhaseForm" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="phaseProjectSelect" class="block text-sm font-semibold text-gray-700 mb-2">اختر المشروع</label>
-                <select id="phaseProjectSelect" required class="input-field mt-1 block w-full shadow-sm p-3">
-                    <option value="" disabled selected>اختر المشروع</option>
+                <div>
+                  <label for="projectPhasesInput" class="block text-sm font-semibold text-gray-700 mb-2">المراحل (افصل بينها بفواصل)</label>
+                  <input type="text" id="projectPhasesInput" required class="input-field w-full">
+                </div>
+                <button type="submit" class="btn-primary w-full">إضافة المشروع</button>
+              </form>
+            </div>
+
+            <!-- Add Phase -->
+            <div class="glass-effect p-6 rounded-lg">
+              <h3 class="text-xl font-bold text-gray-800 mb-4">إضافة مرحلة جديدة لمشروع</h3>
+              <form id="addPhaseForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label for="phaseProjectSelect" class="block text-sm font-semibold text-gray-700 mb-2">اختر المشروع</label>
+                    <select id="phaseProjectSelect" required class="input-field w-full">
+                      <option value="" disabled selected>اختر المشروع</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="newPhaseName" class="block text-sm font-semibold text-gray-700 mb-2">اسم المرحلة</label>
+                    <input type="text" id="newPhaseName" required class="input-field w-full" placeholder="أدخل اسم المرحلة">
+                  </div>
+                </div>
+                <button type="submit" class="btn-primary w-full">إضافة المرحلة</button>
+              </form>
+            </div>
+
+            <!-- Manage Projects -->
+            <div class="glass-effect p-6 rounded-lg">
+              <h3 class="text-xl font-bold text-gray-800 mb-4">إدارة المشاريع</h3>
+              <div id="projectsList" class="space-y-2"></div>
+            </div>
+
+            <!-- Manage Materials -->
+            <div class="glass-effect p-6 rounded-lg">
+              <h3 class="text-xl font-bold text-gray-800 mb-4">إدارة المواد</h3>
+              <form id="adminForm" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <select id="adminItemType" class="input-field" required>
+                  <option value="مواد">مواد</option>
+                  <option value="عمالة">عمالة</option>
+                  <option value="مقاول">مقاول</option>
                 </select>
+                <input type="text" id="adminItemName" placeholder="الاسم" required class="input-field">
+                <input type="text" id="adminItemUnit" placeholder="الوحدة" required class="input-field">
+                <button type="submit" class="btn-primary md:col-span-3">إضافة</button>
+              </form>
+              <div id="materialsList" class="space-y-2"></div>
             </div>
-            <div>
-                <label for="newPhaseName" class="block text-sm font-semibold text-gray-700 mb-2">اسم المرحلة</label>
-                <input type="text" id="newPhaseName" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="أدخل اسم المرحلة">
+
+            <!-- Manage Workers/Contractors -->
+            <div class="glass-effect p-6 rounded-lg">
+              <h3 class="text-xl font-bold text-gray-800 mb-4">إدارة العمالة / المقاولين</h3>
+              <div id="workersContractorsList" class="space-y-2"></div>
             </div>
-        </div>
-        <button type="submit" class="btn-primary py-3 px-6 text-sm font-semibold">
-            إضافة المرحلة
-        </button>
-    </form>
-</div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
 
-
-                <!-- Add New Items Section -->
-                <div class="glass-effect p-6 rounded-lg">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">إضافة عنصر جديد</h3>
-                    <form id="adminForm" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="adminItemType" class="block text-sm font-semibold text-gray-700 mb-2">نوع العنصر</label>
-                                <select id="adminItemType" required class="input-field mt-1 block w-full shadow-sm p-3">
-                                    <option value="" disabled selected>اختر النوع</option>
-                                    <option value="materials">مواد</option>
-                                    <option value="workers">عمالة</option>
-                                    <option value="contractors">مقاولين</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="adminItemName" class="block text-sm font-semibold text-gray-700 mb-2">اسم العنصر</label>
-                                <input type="text" id="adminItemName" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="أدخل اسم العنصر">
-                            </div>
-                            <div>
-                                <label for="adminItemUnit" class="block text-sm font-semibold text-gray-700 mb-2">الوحدة</label>
-                                <input type="text" id="adminItemUnit" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="كيس، يومية، متر، إلخ">
-                            </div>
-                        </div>
-                        <button type="submit" class="btn-primary py-3 px-6 text-sm font-semibold">
-                            إضافة العنصر
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Management Lists Section -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                    <!-- Projects List -->
-                    <div class="glass-effect p-4 rounded-lg">
-                        <h4 class="text-lg font-bold text-gray-800 mb-3">المشاريع الحالية</h4>
-                        <div id="projectsList" class="space-y-2">
-                            <p class="text-sm text-gray-500">جاري التحميل...</p>
-                        </div>
-                    </div>
-
-                    <!-- Materials List -->
-                    <div class="glass-effect p-4 rounded-lg">
-                        <h4 class="text-lg font-bold text-gray-800 mb-3">المواد</h4>
-                        <div id="materialsList" class="space-y-2">
-                            <p class="text-sm text-gray-500">جاري التحميل...</p>
-                        </div>
-                    </div>
-
-                    <!-- Workers & Contractors List -->
-                    <div class="glass-effect p-4 rounded-lg">
-                        <h4 class="text-lg font-bold text-gray-800 mb-3">العمالة والمقاولين</h4>
-                        <div id="workersContractorsList" class="space-y-2">
-                            <p class="text-sm text-gray-500">جاري التحميل...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- Message Modal -->
+  <div id="messageBox" class="fixed inset-0 modal-backdrop hidden items-center justify-center p-4">
+    <div class="modal-content p-6 shadow-xl w-full max-w-sm text-center">
+      <p id="messageText" class="text-gray-800 font-medium mb-4">رسالة النظام تظهر هنا</p>
+      <button id="closeMessageBtn" class="w-full py-2 px-4 btn-primary text-sm font-medium">إغلاق</button>
     </div>
-    
-    <!-- Message Modal -->
-    <div id="messageBox" class="fixed inset-0 modal-backdrop hidden items-center justify-center p-4">
-        <div class="modal-content p-6 shadow-xl w-full max-w-sm text-center">
-            <p id="messageText" class="text-gray-800 font-medium mb-4">رسالة النظام تظهر هنا</p>
-            <button id="closeMessageBtn" class="w-full py-2 px-4 btn-primary text-sm font-medium">إغلاق</button>
-        </div>
-    </div>
+  </div>
 
-    <script type="module" src="dashboard.js"></script>
+  <script type="module" src="dashboard.js"></script>
 </body>
 </html>
-
