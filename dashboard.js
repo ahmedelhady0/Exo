@@ -32,6 +32,7 @@ class DashboardManager {
         this.workerUnitInput = document.getElementById('workerUnit');
         this.contractorNameSelect = document.getElementById('contractorName');
         this.contractorUnitInput = document.getElementById('contractorUnit');
+        this.reportsHistory = document.getElementById('reportsHistory');
 
         this.initListeners();
         this.loadInitialData();
@@ -126,10 +127,72 @@ class DashboardManager {
                 this.fetchMaterials();
                 this.fetchWorkers();
                 this.fetchContractors();
+                this.fetchReports();
+                this.checkAdminStatus(); // <<-- Added this line
 
             } else {
                 console.log("No user is authenticated. Redirecting to login page.");
             }
+        });
+    }
+
+    // Fetch reports from Firestore and display them
+    fetchReports() {
+        if (!this.userId) return;
+
+        const reportsCollectionRef = collection(db, `artifacts/${appId}/users/${this.userId}/reports`);
+        onSnapshot(reportsCollectionRef, (snapshot) => {
+            this.reportsHistory.innerHTML = ''; // Clear previous reports
+            if (snapshot.empty) {
+                this.reportsHistory.innerHTML = `<p class="text-center text-gray-500">لا توجد تقارير سابقة.</p>`;
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const report = doc.data();
+                const reportElement = document.createElement('div');
+                reportElement.classList.add('report-item', 'bg-gray-100', 'p-4', 'rounded-lg', 'shadow-sm', 'mb-4');
+                
+                // Format timestamp
+                const date = report.timestamp.toDate ? report.timestamp.toDate() : new Date(report.timestamp);
+                const formattedDate = date.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const formattedTime = date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+                
+                let reportDetails = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-bold text-gray-800">تقرير بتاريخ:</span>
+                        <span class="text-sm text-gray-600">${formattedDate} - ${formattedTime}</span>
+                    </div>
+                    <p class="mb-1"><span class="font-semibold text-gray-700">المشروع:</span> ${report.projectName}</p>
+                    <p class="mb-1"><span class="font-semibold text-gray-700">المرحلة:</span> ${report.projectPhase}</p>
+                    <p class="mb-1"><span class="font-semibold text-gray-700">نوع البند:</span> ${report.itemType}</p>
+                `;
+
+                if (report.itemType === 'مواد') {
+                    reportDetails += `
+                        <p class="mb-1"><span class="font-semibold text-gray-700">اسم المادة:</span> ${report.materialName}</p>
+                        <p class="mb-1"><span class="font-semibold text-gray-700">الكمية:</span> ${report.materialQuantity}</p>
+                        <p class="mb-1"><span class="font-semibold text-gray-700">الوحدة:</span> ${report.materialUnit}</p>
+                    `;
+                } else if (report.itemType === 'عمالة') {
+                    reportDetails += `
+                        <p class="mb-1"><span class="font-semibold text-gray-700">اسم العامل:</span> ${report.workerName}</p>
+                        <p class="mb-1"><span class="font-semibold text-gray-700">الكمية:</span> ${report.workerQuantity}</p>
+                        <p class="mb-1"><span class="font-semibold text-gray-700">الوحدة:</span> ${report.workerUnit}</p>
+                    `;
+                } else if (report.itemType === 'مقاول') {
+                    reportDetails += `
+                        <p class="mb-1"><span class="font-semibold text-gray-700">اسم المقاول:</span> ${report.contractorName}</p>
+                        <p class="mb-1"><span class="font-semibold text-gray-700">الكمية:</span> ${report.contractorQuantity}</p>
+                        <p class="mb-1"><span class="font-semibold text-gray-700">الوحدة:</span> ${report.contractorUnit}</p>
+                    `;
+                }
+                
+                reportDetails += `<p class="mt-2 text-sm text-gray-500">ملاحظات: ${report.notes || 'لا توجد'}</p>`;
+
+                reportElement.innerHTML = reportDetails;
+                this.reportsHistory.appendChild(reportElement);
+            });
         });
     }
 
