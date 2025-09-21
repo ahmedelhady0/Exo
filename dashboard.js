@@ -83,7 +83,18 @@ class DashboardManager {
             if (user) {
                 this.currentUser = user;
                 this.userId = user.uid;
-                this.userWelcome.textContent = `مرحباً، ${this.userId.substring(0, 8)}...`;
+                
+                // Fetch the username from Firestore
+                const userDocRef = doc(db, `artifacts/${appId}/public/data/users/${user.uid}`);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    const username = userData.username || 'المستخدم'; // Use 'المستخدم' as a fallback
+                    this.userWelcome.textContent = `مرحباً، ${username}`;
+                } else {
+                    this.userWelcome.textContent = `مرحباً، ${this.userId.substring(0, 8)}...`;
+                }
+
                 console.log("User is authenticated:", this.userId);
 
                 // Fetch data after successful authentication
