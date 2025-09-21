@@ -1,4 +1,130 @@
-// Dashboard functionality with Firebase
+    async handleAddPhase(event) {
+        event.preventDefault();
+        const projectId = document.getElementById('existingProject').value;
+        const newPhase = document.getElementById('newPhase').value.trim();
+
+        if (!projectId || !newPhase) {
+            this.showMessage("يرجى اختيار المشروع وإدخال اسم المرحلة.");
+            return;
+        }
+
+        try {
+            // Get current project data
+            const projectRef = doc(db, `artifacts/${appId}/public/data/projects`, projectId);
+            const projectSnap = await getDoc(projectRef);
+            
+            if (!projectSnap.exists()) {
+                this.showMessage("المشروع المحدد غير موجود.");
+                return;
+            }
+
+            const projectData = projectSnap.data();
+            const currentPhases = projectData.phases || [];
+
+            // Check if phase already exists
+            if (currentPhases.includes(newPhase)) {
+                this.showMessage("هذه المرحلة موجودة بالفعل في المشروع.");
+                return;
+            }
+
+            // Add new phase
+            const updatedPhases = [...currentPhases, newPhase];
+            
+            await updateDoc(projectRef, {
+                phases: updatedPhases,
+                updatedAt: new Date()
+            });
+
+            this.showMessage(`تمت إضافة المرحلة "${newPhase}" بنجاح إلى المشروع!`);
+            this.addPhaseForm.reset();
+        } catch (error) {
+            console.error("Error adding phase:", error);
+            this.showMessage("حدث خطأ أثناء إضافة المرحلة. يرجى المحاولة مرة أخرى.");
+        }
+    }
+
+    // Edit modal functions
+    showEditModal(type, id, name, unitOrPhases) {
+        this.currentEditItem = { type, id, name, unitOrPhases };
+        this.editItemName.value = name;
+        
+        if (type === 'project') {
+            this.editUnitDiv.classList.add('hidden');
+            this.editPhasesDiv.classList.remove('hidden');
+            this.editProjectPhases.value = unitOrPhases;
+        } else {
+            this.editUnitDiv.classList.remove('hidden');
+            this.editPhasesDiv.classList.add('hidden');
+            this.editItemUnit.value = unitOrPhases;
+        }
+        
+        this.editModal.classList.remove('hidden');
+        this.editModal.classList.add('flex');
+    }
+
+    hideEditModal() {
+        this.editModal.classList.add('hidden');
+        this.editModal.classList.remove('flex');
+        this.currentEditItem = null;
+    }
+
+    async handleEditSubmit(event) {
+        event.preventDefault();
+        
+        if (!this.currentEditItem) return;
+
+        const { type, id } = this.currentEditItem;
+        const newName = this.editItemName.value.trim();
+        
+        if (!newName) {
+            this.showMessage("يرجى إدخال اسم صالح.");
+            return;
+        }
+
+        try {
+            let updateData = {
+                name: newName,
+                updatedAt: new Date()
+            };
+
+            if (type === 'project') {
+                const phasesStr = this.editProjectPhases.value.trim();
+                if (!phasesStr) {
+                    this.showMessage("يرجى إدخال مرحلة واحدة على الأقل.");
+                    return;
+                }
+                const phases = phasesStr.split(',').map(phase => phase.trim()).filter(phase => phase);
+                updateData.phases = phases;
+            } else {
+                const newUnit = this.editItemUnit.value.trim();
+                if (!newUnit) {
+                    this.showMessage("يرجى إدخال وحدة صالحة.");
+                    return;
+                }
+                updateData.unit = newUnit;
+            }
+
+            let collectionName;
+            switch (type) {
+                case 'project':
+                    collectionName = 'projects';
+                    break;
+                case 'material':
+                    collectionName = 'materials';
+                    break;
+                case 'worker':
+                    collectionName = 'workers';
+                    break;
+                case 'contractor':
+                    collectionName = 'contractors';
+                    break;
+                default:
+                    this.showMessage("نوع العنصر غير صالح.");
+                    return;
+            }
+
+            const itemRef = doc(db, `artifacts/${appId}/public/data/${collectionName}`, id);
+            // Dashboard functionality with Firebase
 import { auth, db, appId, adminUsername } from './auth.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { collection, onSnapshot, addDoc, doc, getDoc, setDoc, getDocs, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -41,9 +167,23 @@ class DashboardManager {
         this.adminItemNameInput = document.getElementById('adminItemName');
         this.adminItemUnitInput = document.getElementById('adminItemUnit');
         this.addProjectForm = document.getElementById('addProjectForm');
+        this.addPhaseForm = document.getElementById('addPhaseForm');
         this.projectsList = document.getElementById('projectsList');
         this.materialsList = document.getElementById('materialsList');
         this.workersContractorsList = document.getElementById('workersContractorsList');
+
+        // Edit modal elements
+        this.editModal = document.getElementById('editModal');
+        this.editForm = document.getElementById('editForm');
+        this.editItemName = document.getElementById('editItemName');
+        this.editItemUnit = document.getElementById('editItemUnit');
+        this.editProjectPhases = document.getElementById('editProjectPhases');
+        this.editUnitDiv = document.getElementById('editUnitDiv');
+        this.editPhasesDiv = document.getElementById('editPhasesDiv');
+        this.cancelEditBtn = document.getElementById('cancelEditBtn');
+
+        // Current edit context
+        this.currentEditItem = null;
 
         this.initListeners();
         this.loadInitialData();
@@ -86,6 +226,15 @@ class DashboardManager {
         }
         if (this.addProjectForm) {
             this.addProjectForm.addEventListener('submit', this.handleAddProject.bind(this));
+        }
+        if (this.addPhaseForm) {
+            this.addPhaseForm.addEventListener('submit', this.handleAddPhase.bind(this));
+        }
+        if (this.cancelEditBtn) {
+            this.cancelEditBtn.addEventListener('click', this.hideEditModal.bind(this));
+        }
+        if (this.editForm) {
+            this.editForm.addEventListener('submit', this.handleEditSubmit.bind(this));
         }
     }
 
@@ -274,6 +423,12 @@ class DashboardManager {
                 this.projectsList.innerHTML = '';
             }
 
+            // Update existing projects dropdown for adding phases
+            const existingProjectSelect = document.getElementById('existingProject');
+            if (existingProjectSelect) {
+                existingProjectSelect.innerHTML = '<option value="" disabled selected>اختر المشروع</option>';
+            }
+
             snapshot.forEach(doc => {
                 const data = doc.data();
                 this.projects.push({ id: doc.id, ...data });
@@ -285,6 +440,14 @@ class DashboardManager {
                     projectNameSelect.appendChild(option);
                 }
 
+                // Add to existing projects dropdown
+                if (existingProjectSelect) {
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = data.name;
+                    existingProjectSelect.appendChild(option);
+                }
+
                 // Add to admin list
                 if (this.projectsList && this.userRole === 'admin') {
                     const projectItem = document.createElement('div');
@@ -292,7 +455,10 @@ class DashboardManager {
                     projectItem.innerHTML = `
                         <div class="flex justify-between items-center">
                             <span class="font-medium">${data.name}</span>
-                            <button onclick="dashboard.deleteProject('${doc.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                            <div class="flex space-x-1 space-x-reverse">
+                                <button onclick="dashboard.editProject('${doc.id}', '${data.name}', '${data.phases.join(', ')}')" class="text-blue-500 text-xs hover:text-blue-700">تعديل</button>
+                                <button onclick="dashboard.deleteProject('${doc.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                            </div>
                         </div>
                         <div class="text-xs text-gray-500 mt-1">${data.phases.join(', ')}</div>
                     `;
@@ -357,6 +523,7 @@ class DashboardManager {
     fetchMaterials() {
         const materialsCollectionRef = collection(db, `artifacts/${appId}/public/data/materials`);
         onSnapshot(materialsCollectionRef, (snapshot) => {
+            console.log("Materials snapshot received, docs count:", snapshot.size);
             this.materials = [];
             if (this.materialNameSelect) {
                 this.materialNameSelect.innerHTML = '<option value="" disabled selected>اختر المادة</option>';
@@ -367,8 +534,17 @@ class DashboardManager {
                 this.materialsList.innerHTML = '';
             }
 
+            if (snapshot.empty) {
+                console.log("No materials found in database");
+                if (this.materialsList) {
+                    this.materialsList.innerHTML = '<p class="text-sm text-gray-500">لا توجد مواد</p>';
+                }
+                return;
+            }
+
             snapshot.forEach(doc => {
                 const data = doc.data();
+                console.log("Processing material:", data);
                 this.materials.push({ id: doc.id, ...data });
                 
                 if (this.materialNameSelect) {
@@ -382,10 +558,16 @@ class DashboardManager {
                 if (this.materialsList && this.userRole === 'admin') {
                     const materialItem = document.createElement('div');
                     materialItem.classList.add('admin-panel-item', 'p-2', 'mb-2');
+                    // Escape quotes in data to prevent HTML issues
+                    const escapedName = data.name.replace(/'/g, '&#39;');
+                    const escapedUnit = data.unit.replace(/'/g, '&#39;');
                     materialItem.innerHTML = `
                         <div class="flex justify-between items-center">
                             <span class="font-medium">${data.name}</span>
-                            <button onclick="dashboard.deleteMaterial('${doc.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                            <div class="flex space-x-1 space-x-reverse">
+                                <button onclick="dashboard.editMaterial('${doc.id}', '${escapedName}', '${escapedUnit}')" class="text-blue-500 text-xs hover:text-blue-700">تعديل</button>
+                                <button onclick="dashboard.deleteMaterial('${doc.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                            </div>
                         </div>
                         <div class="text-xs text-gray-500">${data.unit}</div>
                     `;
@@ -393,21 +575,29 @@ class DashboardManager {
                 }
             });
 
-            if (this.materialsList && this.materials.length === 0) {
-                this.materialsList.innerHTML = '<p class="text-sm text-gray-500">لا توجد مواد</p>';
-            }
+            console.log("Total materials loaded:", this.materials.length);
+        }, (error) => {
+            console.error("Error fetching materials:", error);
+            this.showMessage("خطأ في تحميل المواد من قاعدة البيانات");
         });
     }
 
     fetchWorkers() {
         const workersCollectionRef = collection(db, `artifacts/${appId}/public/data/workers`);
         onSnapshot(workersCollectionRef, (snapshot) => {
+            console.log("Workers snapshot received, docs count:", snapshot.size);
             this.workers = [];
             if (this.workerNameSelect) {
                 this.workerNameSelect.innerHTML = '<option value="" disabled selected>اختر العامل</option>';
             }
+            
+            if (snapshot.empty) {
+                console.log("No workers found in database");
+            }
+            
             snapshot.forEach(doc => {
                 const data = doc.data();
+                console.log("Processing worker:", data);
                 this.workers.push({ id: doc.id, ...data });
                 if (this.workerNameSelect) {
                     const option = document.createElement('option');
@@ -416,19 +606,31 @@ class DashboardManager {
                     this.workerNameSelect.appendChild(option);
                 }
             });
+            
+            console.log("Total workers loaded:", this.workers.length);
             this.updateWorkersContractorsList();
+        }, (error) => {
+            console.error("Error fetching workers:", error);
+            this.showMessage("خطأ في تحميل العمالة من قاعدة البيانات");
         });
     }
 
     fetchContractors() {
         const contractorsCollectionRef = collection(db, `artifacts/${appId}/public/data/contractors`);
         onSnapshot(contractorsCollectionRef, (snapshot) => {
+            console.log("Contractors snapshot received, docs count:", snapshot.size);
             this.contractors = [];
             if (this.contractorNameSelect) {
                 this.contractorNameSelect.innerHTML = '<option value="" disabled selected>اختر المقاول</option>';
             }
+            
+            if (snapshot.empty) {
+                console.log("No contractors found in database");
+            }
+            
             snapshot.forEach(doc => {
                 const data = doc.data();
+                console.log("Processing contractor:", data);
                 this.contractors.push({ id: doc.id, ...data });
                 if (this.contractorNameSelect) {
                     const option = document.createElement('option');
@@ -437,7 +639,12 @@ class DashboardManager {
                     this.contractorNameSelect.appendChild(option);
                 }
             });
+            
+            console.log("Total contractors loaded:", this.contractors.length);
             this.updateWorkersContractorsList();
+        }, (error) => {
+            console.error("Error fetching contractors:", error);
+            this.showMessage("خطأ في تحميل المقاولين من قاعدة البيانات");
         });
     }
 
@@ -450,10 +657,16 @@ class DashboardManager {
         this.workers.forEach(worker => {
             const workerItem = document.createElement('div');
             workerItem.classList.add('admin-panel-item', 'p-2', 'mb-2');
+            // Escape quotes in data to prevent HTML issues
+            const escapedName = worker.name.replace(/'/g, '&#39;');
+            const escapedUnit = worker.unit.replace(/'/g, '&#39;');
             workerItem.innerHTML = `
                 <div class="flex justify-between items-center">
                     <span class="font-medium">${worker.name}</span>
-                    <button onclick="dashboard.deleteWorker('${worker.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                    <div class="flex space-x-1 space-x-reverse">
+                        <button onclick="dashboard.editWorker('${worker.id}', '${escapedName}', '${escapedUnit}')" class="text-blue-500 text-xs hover:text-blue-700">تعديل</button>
+                        <button onclick="dashboard.deleteWorker('${worker.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                    </div>
                 </div>
                 <div class="text-xs text-gray-500">عامل - ${worker.unit}</div>
             `;
@@ -464,10 +677,16 @@ class DashboardManager {
         this.contractors.forEach(contractor => {
             const contractorItem = document.createElement('div');
             contractorItem.classList.add('admin-panel-item', 'p-2', 'mb-2');
+            // Escape quotes in data to prevent HTML issues
+            const escapedName = contractor.name.replace(/'/g, '&#39;');
+            const escapedUnit = contractor.unit.replace(/'/g, '&#39;');
             contractorItem.innerHTML = `
                 <div class="flex justify-between items-center">
                     <span class="font-medium">${contractor.name}</span>
-                    <button onclick="dashboard.deleteContractor('${contractor.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                    <div class="flex space-x-1 space-x-reverse">
+                        <button onclick="dashboard.editContractor('${contractor.id}', '${escapedName}', '${escapedUnit}')" class="text-blue-500 text-xs hover:text-blue-700">تعديل</button>
+                        <button onclick="dashboard.deleteContractor('${contractor.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                    </div>
                 </div>
                 <div class="text-xs text-gray-500">مقاول - ${contractor.unit}</div>
             `;
@@ -597,6 +816,9 @@ class DashboardManager {
             return;
         }
 
+        // Show loading message
+        this.showMessage("جاري إضافة العنصر...");
+
         try {
             let collectionName;
             switch (itemType) {
@@ -615,16 +837,49 @@ class DashboardManager {
             }
 
             const collectionRef = collection(db, `artifacts/${appId}/public/data/${collectionName}`);
-            await addDoc(collectionRef, {
+            
+            // Check if item with same name already exists
+            const existingItems = await getDocs(collectionRef);
+            const duplicateExists = existingItems.docs.some(doc => 
+                doc.data().name.toLowerCase() === itemName.toLowerCase()
+            );
+
+            if (duplicateExists) {
+                this.showMessage(`عنصر بالاسم "${itemName}" موجود بالفعل.`);
+                return;
+            }
+
+            const newItemData = {
                 name: itemName,
                 unit: itemUnit,
-                createdAt: new Date()
-            });
+                createdAt: new Date(),
+                createdBy: this.userId
+            };
+
+            console.log("Adding new item:", newItemData, "to collection:", collectionName);
+            
+            const docRef = await addDoc(collectionRef, newItemData);
+            console.log("Item added successfully with ID:", docRef.id);
+            
             this.showMessage(`تمت إضافة ${itemName} بنجاح إلى قاعدة البيانات!`);
             this.adminForm.reset();
+            
+            // Force refresh of the specific collection
+            switch (itemType) {
+                case 'materials':
+                    this.fetchMaterials();
+                    break;
+                case 'workers':
+                    this.fetchWorkers();
+                    break;
+                case 'contractors':
+                    this.fetchContractors();
+                    break;
+            }
+            
         } catch (error) {
             console.error("Error adding admin item:", error);
-            this.showMessage("حدث خطأ أثناء إضافة البند. يرجى المحاولة مرة أخرى.");
+            this.showMessage(`حدث خطأ أثناء إضافة البند: ${error.message}`);
         }
     }
 
