@@ -1630,14 +1630,6 @@ let dashboard;
 document.addEventListener('DOMContentLoaded', () => {
     dashboard = new DashboardManager();
 });
-}
 
-
-// Create global dashboard instance for delete functions
-let dashboard;
-
-document.addEventListener('DOMContentLoaded', () => {
-    dashboard = new DashboardManager();
-});
 
 
