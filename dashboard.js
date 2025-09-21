@@ -34,6 +34,11 @@ class DashboardManager {
         this.contractorUnitInput = document.getElementById('contractorUnit');
         this.reportsHistory = document.getElementById('reportsHistory');
 
+        this.adminForm = document.getElementById('adminForm');
+        this.adminItemTypeSelect = document.getElementById('adminItemType');
+        this.adminItemNameInput = document.getElementById('adminItemName');
+        this.adminItemUnitInput = document.getElementById('adminItemUnit');
+
         this.initListeners();
         this.loadInitialData();
         this.checkAuthStatus();
@@ -64,6 +69,14 @@ class DashboardManager {
         }
         if (this.contractorNameSelect) {
             this.contractorNameSelect.addEventListener('change', this.handleContractorNameChange.bind(this));
+        }
+
+        // Admin Panel listeners
+        if (this.adminPanelBtn) {
+            this.adminPanelBtn.addEventListener('click', this.handleAdminPanelClick.bind(this));
+        }
+        if (this.adminForm) {
+            this.adminForm.addEventListener('submit', this.handleAdminSubmit.bind(this));
         }
     }
 
@@ -128,7 +141,7 @@ class DashboardManager {
                 this.fetchWorkers();
                 this.fetchContractors();
                 this.fetchReports();
-                this.checkAdminStatus(); // <<-- Added this line
+                this.checkAdminStatus();
 
             } else {
                 console.log("No user is authenticated. Redirecting to login page.");
@@ -377,6 +390,59 @@ class DashboardManager {
             console.error("Error checking admin status:", error);
             this.userRole = 'user';
             this.adminPanelBtn.classList.add('hidden');
+        }
+    }
+
+    handleAdminPanelClick() {
+        // Hide all user tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+        // Show the admin panel tab
+        const adminTab = document.getElementById('adminPanelTab');
+        if (adminTab) {
+            adminTab.classList.remove('hidden');
+        }
+    }
+
+    async handleAdminSubmit(event) {
+        event.preventDefault();
+        const itemType = this.adminItemTypeSelect.value;
+        const itemName = this.adminItemNameInput.value;
+        const itemUnit = this.adminItemUnitInput.value;
+
+        if (!itemType || !itemName || !itemUnit) {
+            this.showMessage("يرجى ملء جميع الحقول.");
+            return;
+        }
+
+        try {
+            let collectionName;
+            switch (itemType) {
+                case 'materials':
+                    collectionName = 'materials';
+                    break;
+                case 'workers':
+                    collectionName = 'workers';
+                    break;
+                case 'contractors':
+                    collectionName = 'contractors';
+                    break;
+                default:
+                    this.showMessage("نوع البند غير صالح.");
+                    return;
+            }
+
+            const collectionRef = collection(db, `artifacts/${appId}/public/data/${collectionName}`);
+            await addDoc(collectionRef, {
+                name: itemName,
+                unit: itemUnit
+            });
+            this.showMessage(`تمت إضافة ${itemName} بنجاح إلى قاعدة البيانات!`);
+            this.adminForm.reset();
+        } catch (error) {
+            console.error("Error adding admin item:", error);
+            this.showMessage("حدث خطأ أثناء إضافة البند. يرجى المحاولة مرة أخرى.");
         }
     }
 }
