@@ -36,9 +36,15 @@ class AuthManager {
     
     init() {
         // Event listeners
-        this.signInBtn.addEventListener('click', () => this.signIn());
-        this.signUpBtn.addEventListener('click', () => this.signUp());
-        this.closeMessageBtn.addEventListener('click', () => this.closeMessage());
+        if (this.signInBtn) {
+            this.signInBtn.addEventListener('click', () => this.signIn());
+        }
+        if (this.signUpBtn) {
+            this.signUpBtn.addEventListener('click', () => this.signUp());
+        }
+        if (this.closeMessageBtn) {
+            this.closeMessageBtn.addEventListener('click', () => this.closeMessage());
+        }
         
         // Update label text to username
         const emailLabel = document.querySelector('label[for="authEmail"]');
