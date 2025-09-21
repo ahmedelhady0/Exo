@@ -53,47 +53,31 @@ class DashboardManager {
         this.setupTabSwitching();
     }
 
-   // Initialize all event listeners
-initListeners() {
-    if (this.reportForm) {
-        this.reportForm.addEventListener('submit', this.handleReportSubmit.bind(this));
-    }
-    if (this.signOutBtn) {
-        this.signOutBtn.addEventListener('click', this.handleSignOut.bind(this));
-    }
-    if (this.closeMessageBtn) {
-        this.closeMessageBtn.addEventListener('click', () => this.hideMessage());
-    }
+    // Initialize all event listeners
+    initListeners() {
+        if (this.reportForm) {
+            this.reportForm.addEventListener('submit', this.handleReportSubmit.bind(this));
+        }
+        if (this.signOutBtn) {
+            this.signOutBtn.addEventListener('click', this.handleSignOut.bind(this));
+        }
+        if (this.closeMessageBtn) {
+            this.closeMessageBtn.addEventListener('click', () => this.hideMessage());
+        }
 
-    // Dynamic form listeners
-    if (this.itemTypeSelect) {
-        this.itemTypeSelect.addEventListener('change', this.handleItemTypeChange.bind(this));
-    }
-    if (this.materialNameSelect) {
-        this.materialNameSelect.addEventListener('change', this.handleMaterialNameChange.bind(this));
-    }
-    if (this.workerNameSelect) {
-        this.workerNameSelect.addEventListener('change', this.handleWorkerNameChange.bind(this));
-    }
-    if (this.contractorNameSelect) {
-        this.contractorNameSelect.addEventListener('change', this.handleContractorNameChange.bind(this));
-    }
-
-    // Admin Panel listeners
-    if (this.adminPanelBtn) {
-        this.adminPanelBtn.addEventListener('click', this.handleAdminPanelClick.bind(this));
-    }
-    if (this.adminForm) {
-        this.adminForm.addEventListener('submit', this.handleAdminSubmit.bind(this));
-    }
-    if (this.addProjectForm) {
-        this.addProjectForm.addEventListener('submit', this.handleAddProject.bind(this));
-    }
-    if (this.addPhaseForm) {
-        this.addPhaseForm.addEventListener('submit', this.handleAddPhase.bind(this));
-    }
-} // ← هنا ينتهي الـ initListeners
-
+        // Dynamic form listeners
+        if (this.itemTypeSelect) {
+            this.itemTypeSelect.addEventListener('change', this.handleItemTypeChange.bind(this));
+        }
+        if (this.materialNameSelect) {
+            this.materialNameSelect.addEventListener('change', this.handleMaterialNameChange.bind(this));
+        }
+        if (this.workerNameSelect) {
+            this.workerNameSelect.addEventListener('change', this.handleWorkerNameChange.bind(this));
+        }
+        if (this.contractorNameSelect) {
+            this.contractorNameSelect.addEventListener('change', this.handleContractorNameChange.bind(this));
+        }
 
         // Admin Panel listeners
         if (this.adminPanelBtn) {
@@ -179,6 +163,7 @@ initListeners() {
                 this.fetchContractors();
                 this.fetchReports();
                 this.checkAdminStatus();
+
             } else {
                 window.location.href = 'index.html';
             }
@@ -188,6 +173,7 @@ initListeners() {
     // Fetch reports
     fetchReports() {
         if (!this.userId) return;
+
         const reportsCollectionRef = collection(db, `artifacts/${appId}/users/${this.userId}/reports`);
         onSnapshot(reportsCollectionRef, (snapshot) => {
             this.reportsHistory.innerHTML = '';
@@ -195,6 +181,7 @@ initListeners() {
                 this.reportsHistory.innerHTML = `<p class="text-center text-gray-500">لا توجد تقارير سابقة.</p>`;
                 return;
             }
+
             snapshot.forEach(doc => {
                 const report = doc.data();
                 const reportElement = document.createElement('div');
@@ -239,12 +226,14 @@ initListeners() {
                     <p class="mb-1"><span class="font-semibold text-gray-700">المجموع:</span> ${(report.costPerUnit * report.quantity).toFixed(2)} ريال</p>
                     <p class="mt-2 text-sm text-gray-500">الوصف: ${report.itemDescription || 'لا يوجد'}</p>
                 `;
+
                 reportElement.innerHTML = reportDetails;
                 this.reportsHistory.appendChild(reportElement);
             });
         });
     }
 
+    // Messages
     showMessage(message) {
         this.messageText.textContent = message;
         this.messageBox.classList.remove('hidden');
@@ -256,6 +245,7 @@ initListeners() {
         this.messageBox.classList.remove('flex');
     }
 
+    // Load static data
     loadInitialData() {
         const reportDateInput = document.getElementById('reportDate');
         if (reportDateInput) {
@@ -277,7 +267,6 @@ initListeners() {
             if (this.phaseProjectSelect) {
                 this.phaseProjectSelect.innerHTML = '<option value="" disabled selected>اختر المشروع</option>';
             }
-
             if (this.projectsList) {
                 this.projectsList.innerHTML = '';
             }
@@ -292,7 +281,6 @@ initListeners() {
                     option.textContent = data.name;
                     projectNameSelect.appendChild(option);
                 }
-
                 if (this.phaseProjectSelect) {
                     const option = document.createElement('option');
                     option.value = doc.id;
@@ -336,75 +324,107 @@ initListeners() {
         });
     }
 
-    // Dynamic form logic
-    handleItemTypeChange() { ... }
-    handleMaterialNameChange() { ... }
-    handleWorkerNameChange() { ... }
-    handleContractorNameChange() { ... }
-
-    // Fetch materials, workers, contractors
-    fetchMaterials() { ... }
-    fetchWorkers() { ... }
-    fetchContractors() { ... }
-    updateWorkersContractorsList() { ... }
-
-    // Report submit
-    async handleReportSubmit(event) { ... }
-
-    // Admin panel
-    async checkAdminStatus() { ... }
-    handleAdminPanelClick() { ... }
-    async handleAddProject(event) { ... }
-    async handleAdminSubmit(event) { ... }
-
-    // Delete functions
-    async deleteProject(projectId) { ... }
-    async deleteMaterial(materialId) { ... }
-    async deleteWorker(workerId) { ... }
-    async deleteContractor(contractorId) { ... }
-
-    // New: Add Phase
-    async handleAddPhase(event) {
-        event.preventDefault();
-        const projectId = this.phaseProjectSelect.value;
-        const newPhase = document.getElementById('newPhaseName').value.trim();
-
-        if (!projectId || !newPhase) {
-            this.showMessage("يرجى اختيار المشروع وإدخال اسم المرحلة.");
-            return;
-        }
-
-        try {
-            const projectRef = doc(db, `artifacts/${appId}/public/data/projects`, projectId);
-            const projectSnap = await getDoc(projectRef);
-
-            if (projectSnap.exists()) {
-                const projectData = projectSnap.data();
-                const phases = projectData.phases || [];
-
-                if (phases.includes(newPhase)) {
-                    this.showMessage("هذه المرحلة موجودة بالفعل.");
-                    return;
-                }
-
-                phases.push(newPhase);
-                await updateDoc(projectRef, { phases });
-
-                this.showMessage(`تمت إضافة المرحلة "${newPhase}" بنجاح!`);
-                this.addPhaseForm.reset();
-            } else {
-                this.showMessage("المشروع غير موجود.");
-            }
-        } catch (error) {
-            console.error("Error adding phase:", error);
-            this.showMessage("حدث خطأ أثناء إضافة المرحلة. يرجى المحاولة مرة أخرى.");
+    // Item type logic
+    handleItemTypeChange() {
+        const itemType = this.itemTypeSelect.value;
+        this.materialsSection.classList.add('hidden');
+        this.workersSection.classList.add('hidden');
+        this.contractorsSection.classList.add('hidden');
+        if (itemType === 'مواد') {
+            this.materialsSection.classList.remove('hidden');
+        } else if (itemType === 'عمالة') {
+            this.workersSection.classList.remove('hidden');
+        } else if (itemType === 'مقاول') {
+            this.contractorsSection.classList.remove('hidden');
         }
     }
-}
 
-// Global instance
-let dashboard;
-document.addEventListener('DOMContentLoaded', () => {
-    dashboard = new DashboardManager();
-});
+    handleMaterialNameChange() {
+        const selectedMaterial = this.materials.find(m => m.name === this.materialNameSelect.value);
+        this.materialUnitInput.value = selectedMaterial ? selectedMaterial.unit : '';
+    }
 
+    handleWorkerNameChange() {
+        const selectedWorker = this.workers.find(w => w.name === this.workerNameSelect.value);
+        this.workerUnitInput.value = selectedWorker ? selectedWorker.unit : '';
+    }
+
+    handleContractorNameChange() {
+        const selectedContractor = this.contractors.find(c => c.name === this.contractorNameSelect.value);
+        this.contractorUnitInput.value = selectedContractor ? selectedContractor.unit : '';
+    }
+
+    // Fetch materials
+    fetchMaterials() {
+        const materialsCollectionRef = collection(db, `artifacts/${appId}/public/data/materials`);
+        onSnapshot(materialsCollectionRef, (snapshot) => {
+            this.materials = [];
+            if (this.materialNameSelect) {
+                this.materialNameSelect.innerHTML = '<option value="" disabled selected>اختر المادة</option>';
+            }
+            if (this.materialsList) {
+                this.materialsList.innerHTML = '';
+            }
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                this.materials.push({ id: doc.id, ...data });
+                
+                if (this.materialNameSelect) {
+                    const option = document.createElement('option');
+                    option.value = data.name;
+                    option.textContent = `${data.name} (${data.unit})`;
+                    this.materialNameSelect.appendChild(option);
+                }
+
+                if (this.materialsList && this.userRole === 'admin') {
+                    const materialItem = document.createElement('div');
+                    materialItem.classList.add('admin-panel-item', 'p-2', 'mb-2');
+                    materialItem.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium">${data.name}</span>
+                            <button onclick="dashboard.deleteMaterial('${doc.id}')" class="text-red-500 text-xs hover:text-red-700">حذف</button>
+                        </div>
+                        <div class="text-xs text-gray-500">${data.unit}</div>
+                    `;
+                    this.materialsList.appendChild(materialItem);
+                }
+            });
+
+            if (this.materialsList && this.materials.length === 0) {
+                this.materialsList.innerHTML = '<p class="text-sm text-gray-500">لا توجد مواد</p>';
+            }
+        });
+    }
+
+    // Fetch workers
+    fetchWorkers() {
+        const workersCollectionRef = collection(db, `artifacts/${appId}/public/data/workers`);
+        onSnapshot(workersCollectionRef, (snapshot) => {
+            this.workers = [];
+            if (this.workerNameSelect) {
+                this.workerNameSelect.innerHTML = '<option value="" disabled selected>اختر العامل</option>';
+            }
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                this.workers.push({ id: doc.id, ...data });
+                if (this.workerNameSelect) {
+                    const option = document.createElement('option');
+                    option.value = data.name;
+                    option.textContent = `${data.name} (${data.unit})`;
+                    this.workerNameSelect.appendChild(option);
+                }
+            });
+            this.updateWorkersContractorsList();
+        });
+    }
+
+    // Fetch contractors
+    fetchContractors() {
+        const contractorsCollectionRef = collection(db, `artifacts/${appId}/public/data/contractors`);
+        onSnapshot(contractorsCollectionRef, (snapshot) => {
+            this.contractors = [];
+            if (this.contractorNameSelect) {
+                this.contractorNameSelect.innerHTML = '<option value="" disabled selected>اختر المقاول</option>';
+            }
+            snapshot.for
