@@ -184,6 +184,28 @@
                     </form>
                 </div>
 
+                <!-- Add Phase to Existing Project Section -->
+                <div class="glass-effect p-6 rounded-lg mb-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">إضافة مرحلة لمشروع موجود</h3>
+                    <form id="addPhaseForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="existingProject" class="block text-sm font-semibold text-gray-700 mb-2">اختر المشروع</label>
+                                <select id="existingProject" required class="input-field mt-1 block w-full shadow-sm p-3">
+                                    <option value="" disabled selected>اختر المشروع</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="newPhase" class="block text-sm font-semibold text-gray-700 mb-2">المرحلة الجديدة</label>
+                                <input type="text" id="newPhase" required class="input-field mt-1 block w-full shadow-sm p-3" placeholder="اسم المرحلة الجديدة">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-secondary py-3 px-6 text-sm font-semibold">
+                            إضافة المرحلة
+                        </button>
+                    </form>
+                </div>
+
                 <!-- Add New Items Section -->
                 <div class="glass-effect p-6 rounded-lg">
                     <h3 class="text-xl font-bold text-gray-800 mb-4">إضافة عنصر جديد</h3>
@@ -248,6 +270,35 @@
         <div class="modal-content p-6 shadow-xl w-full max-w-sm text-center">
             <p id="messageText" class="text-gray-800 font-medium mb-4">رسالة النظام تظهر هنا</p>
             <button id="closeMessageBtn" class="w-full py-2 px-4 btn-primary text-sm font-medium">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- Edit Item Modal -->
+    <div id="editModal" class="fixed inset-0 modal-backdrop hidden items-center justify-center p-4">
+        <div class="modal-content p-6 shadow-xl w-full max-w-md">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">تعديل البيانات</h3>
+            <form id="editForm" class="space-y-4">
+                <div>
+                    <label for="editItemName" class="block text-sm font-semibold text-gray-700 mb-2">الاسم</label>
+                    <input type="text" id="editItemName" required class="input-field mt-1 block w-full shadow-sm p-3">
+                </div>
+                <div id="editUnitDiv">
+                    <label for="editItemUnit" class="block text-sm font-semibold text-gray-700 mb-2">الوحدة</label>
+                    <input type="text" id="editItemUnit" required class="input-field mt-1 block w-full shadow-sm p-3">
+                </div>
+                <div id="editPhasesDiv" class="hidden">
+                    <label for="editProjectPhases" class="block text-sm font-semibold text-gray-700 mb-2">المراحل (مفصولة بفاصلة)</label>
+                    <input type="text" id="editProjectPhases" class="input-field mt-1 block w-full shadow-sm p-3">
+                </div>
+                <div class="flex space-x-3 space-x-reverse">
+                    <button type="submit" class="btn-primary flex-1 py-3 px-4 text-sm font-semibold">
+                        حفظ التغييرات
+                    </button>
+                    <button type="button" id="cancelEditBtn" class="btn-gray flex-1 py-3 px-4 text-sm font-semibold">
+                        إلغاء
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
