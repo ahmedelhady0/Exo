@@ -22,8 +22,11 @@ export const auth = getAuth(app);
 export const storage = getStorage(app);
 
 // appId مختلف عن نظام التقارير القديم — عشان منعملش تعارض بيانات
-export const appId = 'exo-warehouse-system';
-export const adminUsername = "admin";
+// ابحث عن هذا السطر في ملف firebase-config.js وقم بتغييره إلى default-app-id
+export const appId = "default-app-id"; 
+
+// وأيضاً تأكد من اسم مستخدم المدير (الذي يمنحه النظام رتبة مدير تلقائياً عند إنشاء الحساب)
+export const adminUsername = "admin"; // أو الاسم الذي تريد استخدامه كمدير للـ Admin Panel
 
 // ═══════════════════════════════════════════════════════════
 // قائمة المراحل الثابتة وربطها بالمواد الافتراضية
